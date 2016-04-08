@@ -1,9 +1,7 @@
-SRR027957.bam
-SRR027957.h5
-SRR027957_trimmed.h5
-SRR027958.bam
-SRR027958.h5
-SRR027958_trimmed.h5
+*.sra
+*.bam
+*.h5
+*.tsv
 diffHicUG.aux
 diffHicUG.out
 diffHicUG.bbl

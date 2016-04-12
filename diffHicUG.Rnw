@@ -2115,7 +2115,7 @@ rotPlaid(input[3], mm.param, region=example, width=2.5e4,
 @
 
 <<eval=TRUE,echo=FALSE,label=rotset>>=
-chosen <- o.b[3]
+chosen <- o.b[4]
 example <- anchors(boxed$interactions[chosen], type="second")
 end(example) <- end(anchors(boxed$interactions[chosen], type="first"))
 best.mid.a1 <- (results.b$best.start1[chosen]+results.b$best.end1[chosen])/2

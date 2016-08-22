@@ -1683,20 +1683,20 @@ plotQLDisp(fit)
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-The extent of the EB shrinkage is determined by the heteroskedasticity in the data.
+The extent of the EB shrinkage is determined by the variability of the dispersions.
 If the true dispersions are highly variable, shrinkage to a common value would be inappropriate.
-On the other hand, more shrinkage can be performed to increase precision if the true dispersions are not variable.
-This variability is quantified as the prior degrees of freedom, for which smaller values correspond to more heteroskedasticity and less shrinkage.
+On the other hand, more shrinkage can be performed to increase precision (and thus detection power) if the true dispersions are not variable.
+This is quantified as the prior degrees of freedom, for which smaller values correspond to more variability and less shrinkage.
 
 <<>>=
 summary(fit$df.prior)
 @
 
-It is important to use the \code{robust=TRUE} argument in \code{glmQLFit}.
+It is important to use the \code{robust=TRUE} argument in \code{glmQLFit} \citep{phipson2016robust}.
 This protects against any large positive outliers corresponding to highly variable counts.
 It also protects against large negative outliers.
 These are formed from near-zero deviances when counts are identical, and are not uncommon when counts are low.
-In both cases, such outliers would inflate the apparant heteroskedasticity and increase the estimated prior degrees of freedom.
+Both types of outliers inflate the apparent variability and decrease the estimated prior degrees of freedom.
 
 \section{Further information}
 More details on the statistical methods in \edgeR{} can be found, unsurprisingly, in the \edgeR{} user's guide.

@@ -1221,6 +1221,10 @@ This accounts for differences in library preparation efficiency and sequencing d
 In \edgeR{}, scaling is performed using the effective library size, defined as the product of the library size and the normalization factor for each sample (see the \edgeR{} user's guide).
 Library size normalization is thus achieved by setting all normalization factors to unity.
 
+% This may be the least-worst approach when an assumption of a non-DI majority does not apply.
+% You'll probably have lots of biases (that are confounded with DIs, so can't be properly removed).
+% But at least it's better than normalizing in the wrong direction when you (falsely) assume that a non-DI majority is present.
+
 <<>>=
 libsize.facs <- rep(1, ncol(data))
 @

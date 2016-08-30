@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 13 April 2016}
+Last revised 30 August 2016}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -1216,16 +1216,25 @@ Another human dataset will be loaded here, so \code{hs.frag} from Chapter~\ref{c
 \section{Normalizing with scaling methods}
 \label{sec:simplenorm}
 
-The simplest approach is to use scaling methods like TMM normalization \citep{oshlack2010tmm}.
-This accounts for composition biases by assuming that most interactions do not change between conditions.
-Normalization factors are computed to scale the library sizes, yielding effective sizes that can be used in the downstream differential analysis.
+The simplest approach is to use scaling methods such as library size normalization.
+This accounts for differences in library preparation efficiency and sequencing depth between samples.
+In \edgeR{}, scaling is performed using the effective library size, defined as the product of the library size and the normalization factor for each sample (see the \edgeR{} user's guide).
+Library size normalization is thus achieved by setting all normalization factors to unity.
 
 <<>>=
-normfacs <- normOffsets(data)
-normfacs
+libsize.facs <- rep(1, ncol(data))
 @
 
-In practice, this scaling approach is usually too simplistic.
+Alternatively, TMM normalization \citep{oshlack2010tmm} can be applied on the counts for the bin pairs.
+This accounts for composition biases by assuming that most interactions do not change in intensity between conditions.
+Here, the normalization factors differ from unity as the library size alone is not sufficient to describe the bias in each sample.
+
+<<>>=
+tmm.facs <- normOffsets(data)
+tmm.facs
+@
+
+In practice, scaling methods are usually too simplistic.
 More sophisticated approaches are necessary to handle the complex biases observed in real Hi-C data.
 
 \section{Removing trended biases between libraries}
@@ -1617,8 +1626,10 @@ design
 Obviously, more complex designs can be used if necessary.
 This includes designs with blocking factors for batch effects, pairing between samples or multiple groups.
 
-It is also necessary to assemble a \code{DGEList} object for entry into \edgeR{}.
-Note the inclusion of the normalization offsets that were previously computed with the NB-loess method.
+The \code{InteractionSet} object is also converted into a \code{DGEList} object for analysis with \edgeR{}.
+To include the normalization offsets that were previously computed with the NB-loess method, the offset matrix is assigned to \code{y\$offset}.
+However, if normalization factors were computed instead, these can be incorporated via the \code{norm.factors} argument in \code{asDGEList}.
+Note that the offset matrix will take precedence over scaling factors in \edgeR{} analyses.
 
 <<>>=
 y <- asDGEList(data)

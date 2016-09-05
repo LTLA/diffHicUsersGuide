@@ -2122,11 +2122,13 @@ The coordinates of each interacting bin can be identified by extending lines fro
 <<eval=FALSE,echo=FALSE,label=rot1>>=
 rotPlaid(input[1], mm.param, region=example, width=2.5e4, 
     main="Flox", max.count=cap.wt)
+points(best.mid, best.gap, cex=7) 
 @
 
 <<eval=FALSE,echo=FALSE,label=rot2>>=
 rotPlaid(input[3], mm.param, region=example, width=2.5e4,
     main="KO", max.count=cap.ko)
+points(best.mid, best.gap, cex=7) 
 @
 
 <<eval=TRUE,echo=FALSE,label=rotset>>=
@@ -2148,28 +2150,20 @@ if (as.character(seqnames(.chosen.a1))!="chr2" || start(.chosen.a1)!=136998216 |
 }
 @
 
-<<eval=FALSE,echo=FALSE,label=enbox>>=
-points(best.mid, best.gap, cex=7) 
-@
-
 <<eval=FALSE>>=
 <<rotset>>
 <<rot1>>
-<<enbox>>
 <<rot2>>
-<<enbox>>
 @
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
 <<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
 <<rot1>>
-<<enbox>>
 @ 
 \\
 <<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
 <<rot2>>
-<<enbox>>
 @
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
@@ -2248,197 +2242,211 @@ mtext("logFC", side=1, line=3, cex=1.4)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Conventional feature detection}
-
+\chapter{Detecting differential domain boundaries}
+\label{chap:domains}
 \begin{combox}
-This chapter is a bit odd, so there's not much required from previous chapters.
-In particular, we'll only need the \code{input} and \code{mm.param} objects from Chapter~\ref{chap:counting}.
+This chapter, like the cheese, stands alone, so there's not much we require from other chapters.
+We'll only need the \code{input} and \code{mm.param} objects from Chapter~\ref{chap:counting}.
 \end{combox}
 
 \section{Overview}
-Even though the \pkgname{} package focuses on detecting DIs, some routines are also implemented for conventional analyses of Hi-C data.
-This includes the \code{correctedContact} function for iterative correction \citep{imakaev2012iterative}, and the \code{enrichedPairs} function for peak calling \citep{rao2014kilobase}.
-The following chapter presents some more functions that are designed to identify compartments and domains in the interaction space.
-These methods tend to be rather \textit{ad hoc} from a statistical perspective, so more care is required in interpretation.
-
-\section{Identifying open and closed compartments}
-Contact frequencies in the interaction space of higher organisms typically exhibit a checkerboard pattern.
-This indicates that all sites on the genome must belong in one of two compartments, where loci in the same compartment interact more frequently than those in different compartments \citep{lieberman2009comprehensive}.
-The ``open'' compartment is associated with genes and active transcription, while the ``closed'' compartment is gene-poor.
-Identification of the loci in each compartment can be achieved with the \code{compartmentalize} function.
-In the example below, compartments are identified using bins at 500 kbp resolution.
-
-<<echo=FALSE,results=hide>>=
-set.seed(34234)
-@
-
-<<>>=
-data <- squareCounts(input, width=5e5, filter=1, param=mm.param)
-output <- compartmentalize(data, centers=2)
-@
-
-Briefly, the \code{compartmentalize} function constructs a symmetric matrix of contact frequencies for each chromosome.
-Each row or column of the matrix represents a bin, and each entry of the matrix represents the contact frequency -- in this case, the average abundance across \code{input} libraries.
-Frequencies are normalized to remove distance-dependent trends and coverage biases between bins.
-The normalized matrix is then used in $k$-means clustering \citep{lajoie2015hitchhiker}, where the bins (rows) are clustered based on similarities in their interaction profiles.
-All bins in the same cluster belong to the same compartment, as indicated by the cluster identifier in the returned \code{compartment} vector for each chromosome.
-The name of each entry in the vector refers to the index of \code{regions(data)} corresponding to that bin.
-Bins with \code{NA} entries correspond to low-coverage centromeres or telomeres that are filtered out.
-
-<<>>=
-head(output$chr2$compartment, 20)
-@
-
-By default, two clusters are identified in each chromosome that correspond to the open and closed compartments.
-More clusters can be specified by increasing \code{centers}, though the interpretation of the resulting compartments becomes more difficult.
-The function also returns the contact \code{matrix} for each chromosome.
-Users can then apply their own clustering algorithms on this matrix, if $k$-means is not satisfactory.
-Alternatively, the contact matrix can be used for visualization with \code{image}, as shown below for chromosome 5.
-The red/blue bar at the top of the plot indicates the genomic intervals in either compartment.
-
-<<eval=FALSE,label=compartplot>>=
-par(xpd=TRUE)
-color.range <- c(-5, 5)
-temp <- as.matrix(output$chr5$matrix)
-temp[temp < color.range[1]] <- color.range[1]
-temp[temp > color.range[2]] <- color.range[2]
-image(as.matrix(temp), zlim=color.range)
-current <- output$chr5$compartment
-stretches <- rle(current)
-ends <- cumsum(stretches$lengths) - 0.5
-starts <- ends - stretches$lengths 
-not.na <- !is.na(stretches$values)
-rect(starts[not.na]/(nrow(temp)-1), 1.05, ends[not.na]/(nrow(temp)-1), 1.1,
-   col=c("black", "blue", "green")[stretches$values[not.na]])
-@
-
-\begin{center}
-<<echo=FALSE,fig=TRUE,resolution=100>>=
-<<compartplot>>
-@
-\end{center}
-
-Compartments can be identified at higher spatial resolution by using a lower \code{width} in \code{squareCounts}.
-To avoid running out of memory, users should \code{reform} the parameter object to \code{restrict} counting to intra-chromosomal bin pairs.
-However, be aware that small counts may compromise the effectiveness of the normalization scheme.
-High resolution may also be unnecessary given that compartments are usually quite large, e.g., 1 - 10 Mbp in size.
-
-% Also need to make sure you get the right library sizes.
-% totals <- totalCounts(input, param=mm.param) 
-% intras <- cbind(seqlevels(mm.frag), seqlevels(mm.frag)) 
-% data <- squareCounts(input, width=1e5, filter=1, param=reform(mm.param, restrict=intras)) 
-
-\section{Identifying topological and other domains}
 High intensity triangles are often observed on the diagonal of the intra-chromosomal interaction space.
 These correspond to topologically associating domains (TADs) where loci within each domain interact more frequently than those between domains.
 Such domains are proposed to control genomic behavior by limiting the scope for interactions and restraining the spread of chromatin marks \citep{nora2013segmental}.
 At higher resolutions, small domains may also be formed due to looping between specific genomic elements \citep{rao2014kilobase}.
 
-To identify these domains, \cite{dixon2012topological} introduced a directionality statistic for each genomic locus.
-A region at the start of a domain will interact preferentially with ``upstream'' regions in the same domain, compared to ``downstream'' regions in a different domain.
+To identify these domains, \cite{dixon2012topological} defined a ``directionality index'' for each genomic locus.
+This was computed by counting the number of read pairs mapped between the target locus and an ``upstream'' interval with higher genomic coordinates;
+    counting the number of read pairs mapped between the target locus and a ``downstream'' interval with lower genomic coordinates;
+    and taking the normalized difference of the counts.
+A region at the start of a domain will interact preferentially with upstream regions in the same domain, compared to downstream regions in a different domain.
 Conversely, the region at the end of each domain will interact preferentially with the downstream regions compared to upstream regions.
-This results in a characteristic pattern of positive directionality statistics at the start of the domain, followed by negative values at the end.
-These patterns can be extracted to identify the domain boundaries.
+This results in a characteristic pattern of positive directionality indices at the start of the domain, followed by negative values at the end.
+These patterns can be extracted with hidden Markov models (HMMs) to explicitly identify the domain boundaries.
 
-Directionality calculations are performed using the output of the \code{domainDirections} function.
-In the example below, the genome is first partitioned into 100 kbp bins.
-For each bin, the total number of read pairs mapped between that bin and its closest \code{span} upstream neighbors is counted.
-This is repeated for its closest \code{span} downstream neighbors.
-The genomic coordinates of each bin is returned along with the total count in either direction.
-If multiple libraries are specified in \code{input}, the average of the total counts is returned.
+An alternative analysis is to identify loci where the size or direction of the directionality statistic changes between conditions.
+This complements the standard DI analysis by focusing on regions where the domain boundary changes in strength or orientation.
+Thus, changes in domain definition between conditions can be quantified in a statistically rigorous manner.
+
+\section{Loading up- and downstream counts}
+Up- and downstream counts for each 100 kbp genomic bin are loaded using the \code{domainDirections} function.
+This returns a \code{RangedSummarizedExperiment} object, in which each row corresponds to a bin and each column corresponds to a library.
+The two matrices \code{"up"} and \code{"down"} contain the counts to the up- and downstream regions, respectively.
 
 <<>>=
 finder <- domainDirections(input, mm.param, width=1e5, span=10)
 finder
 @
 
-The total counts can be used to calculate the directionality index defined by \citeauthor{dixon2012topological}
-However, a simpler alternative is to compute the log-fold change between the up/down counts for each bin.
-A large prior count is used to avoid spuriously large changes at low counts.
-The computed values seem to follow a Gaussian distribution, as shown for chromosome 1.
+The two matrices are combined into a single matrix, and the total counts for each library are also loaded.
+These counts are used to construct a \code{DGEList} for analysis with \edgeR{}. 
 
-<<eval=FALSE,label=directiondist>>=
-prior.c <- 10
-directionality <- log2((finder$Up + prior.c)/(finder$Down + prior.c))
-onchr1 <- as.logical(seqnames(finder)=="chr1")
-chr1.dir <- directionality[onchr1]
-hist(chr1.dir, breaks=100)
+<<>>=
+all.counts <- cbind(assay(finder, "up"), assay(finder, "down"))
+totals <- totalCounts(input, mm.param)
+ydom <- DGEList(all.counts, lib.size=rep(totals, 2))
 @
 
+As an aside, the same counts can be used to compute the directionality index originally described by \cite{dixon2012topological}. 
+A Gaussian HMM can then be fitted to explicitly define domain boundaries, using packages like depmixS4 in \R{}.
+However, this analysis is largely outside the scope of \pkgname{} and will not be discussed in detail here.
+
+\section{Constructing the design matrix}
+A design matrix is constructed with condition-specific coefficients for the log-fold change between up- and downstream counts.
+It also contains sample-specific blocking factors to avoid incorporating unnecessary variability in the dispersion estimate due to sample-specific effects.
+Recall that each library contributes two sets of counts to the final matrix, so the vectors containing condition and sample information must be doubled appropriately.
+
+<<>>=
+Condition <- factor(c("flox", "flox", "ko", "ko"))
+Sample <- factor(seq_along(input))
+Condition <- rep(Condition, 2)
+Sample <- rep(Sample, 2)
+Direction <- rep(c("Up", "Down"), each=length(input))
+design <- model.matrix(~0 + Sample + Direction:Condition)
+@
+
+Some further manipulation is performed to clean up the design matrix prior to downstream analysis.
+Redundant coefficients that cause linear dependencies are removed, and the remaining columns are given simpler names.
+For convenience, the condition-specific up/down log-fold changes will be referred to as directionality values in the text below.
+
+<<>>=
+design <- design[,!grepl("DirectionDown", colnames(design))]
+colnames(design) <- sub("DirectionUp:", "", colnames(design)) 
+design
+@
+
+\section{Pre-processing of the count data}
+Filtering is performed to remove low-abundance bins, which do not contain enough counts to reject the null hypothesis.
+In general, this should have little effect as most of the counts should be very large.
+This is because \code{domainDirections} effectively counts read pairs for highly local interactions (as the up- or downstream intervals are adjacent to each bin).
+
+<<>>=
+ab <- aveLogCPM(ydom)
+keep <- ab > 0
+ydom <- ydom[keep,]
+summary(keep)
+@
+
+The same filter is applied to the set of genomic bins to match with the entries of \code{ydom}. 
+
+<<>>=
+cur.regions <- rowRanges(finder)[keep,]
+@
+
+Normalization is not performed here as it is not required. 
+The model contains sample-specific blocking factors, which largely negates the need for normalization between samples.
+Additionally, the differential test for each bin will compare directionality values between conditions.
+This means that any biases between the up- and downstrem counts within each library or condition (e.g., due to mappability of different regions) should cancel out.
+
+\section{Testing for significant differences with \edgeR{}}
+The analysis proceeds directly to dispersion estimation and GLM fitting.
+The mean-dependent trend in the NB dispersions is modelled using \code{estimateDisp} as previously described.
+
+<<eval=FALSE,label=bcvdomplot>>=
+ydom <- estimateDisp(ydom, design)
+plotBCV(ydom)
+@
+
+\setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
 <<echo=FALSE,fig=TRUE>>=
-<<directiondist>>
-@
-\end{center}
-
-% The directionality index is quite non-normal, and the density at zero is a lot higher,
-% making it harder to distinguish between states (all means of states closer to zero; 
-% CV is increased). This would explain the need for a mixture distribution in Dixon's paper.
-% d.index <- sign(finder$Up - finder$Down) * ((finder$Up - finder$Down)/(finder$Up + finder$Down))^2
-% hist(d.index, breaks=100)
-
-Domain identification involves fitting a hidden Markov model (HMM) to the directionalities across each chromosome.
-Three states are used -- upstream bias, no bias and downstream bias, corresponding to the start, middle and end of a domain with positive, near-zero and negative directionalities, respectively.
-The aim is to identify the most likely state for each bin in the fitted model.
-HMM fitting can be performed in \R{} using the depmixS4 package, as shown below.
-Note that the normality of the log-fold changes allows simple modelling with a single Gaussian distribution, instead the mixture of Gaussians used by \citeauthor{dixon2012topological}
-
-<<echo=FALSE,results=hide>>=
-set.seed(43123)
-@
-
-<<results=hide>>=
-require(depmixS4)
-mod <- depmix(chr1.dir~1, family=gaussian(), nstates=3, 
-   ntimes=sum(onchr1), trstart = runif(9))
-fm <- fit(mod, emc=em.control(rand=FALSE), verbose=FALSE)
-@
-
-Examination of the response parameters suggests that state 1 represents upstream bias, state 2 represents downstream bias and state 3 represents no bias.
-The transition probabilities also indicate that a direct transition from upstream to downstream states is unlikely, as is the downstream to no bias transition.
-This is consistent with the expected model of ``upstream bias $\to$ no bias $\to$ downstream bias'' state transitions for each domain.
-
-<<>>=
-summary(fm)
-@
-
-<<echo=FALSE,results=hide>>=
-state.bias <- getpars(fm)[9+3+1+0:2*2]
-if (!identical(order(state.bias,decreasing=TRUE), c(1L, 3L, 2L))) { warning("HMM states are not as expected") }
-@
-
-The most likely state for each bin can be determined by extracting the Viterbi path.
-Each pattern of ``up $\to$ none $\to$ down'' represents the interval of a single domain.
-
-<<>>=
-all.states <- posterior(fm)$state
-head(all.states, n=50)
-@
-
-The performance of this approach can be visually assessed with a (rotated) plaid plot.
-The red, yellow and orange intervals mark the start, end and center of each domain, respectively.
-These match up well with the characteristic triangle patterns in the interaction space.
-
-<<eval=FALSE,label=plotdomain>>=
-colors <- c("red", "yellow", "orange")
-rotPlaid(input[3], mm.param, GRanges("chr1", IRanges(10e6, 20e6)),
-    width=1e5, max.count=50)
-rect(start(finder[onchr1]), 0, end(finder[onchr1]), 1e5,
-   col=colors[all.states], border=NA)
-@
-
-\setkeys{Gin}{width=0.9\textwidth}
-\begin{center}
-<<fig=TRUE,echo=FALSE,height=5,width=10,resolution=100>>=
-<<plotdomain>>
+<<bcvdomplot>>
 @
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-As an aside, nesting of domains is often observed in real data \citep{filippova2014identification}.
-The HMM approach will only report a single set of small domains, and will not report the larger domains in which those small domains are nested.
-Additional effort will be required to identify the nesting structure.
-One possibility is to compute the total contacts between the reported domains, and to use this as a similarity measure for heirarchical clustering.
+A GLM is fitted to the counts for each bin using the specified model and the trended NB dispersion, and QL dispersions are estimated for all bins using robust EB shrinkage.
+
+<<eval=FALSE,label=qldomplot>>=
+fitdom <- glmQLFit(ydom, design, robust=TRUE)
+plotQLDisp(fitdom)
+@
+
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{center}
+<<echo=FALSE,fig=TRUE>>=
+<<qldomplot>>
+@
+\end{center}
+\setkeys{Gin}{width=0.8\textwidth}
+
+
+The aim of the differential analysis is to identify bins where the directionality values differ between conditions.
+The \code{makeContrasts} function is used to construct an appropriate contrast vector, and the QL F-test is applied to detect significant differences.
+
+<<>>=
+con <- makeContrasts(Conditionko - Conditionflox, levels=design)
+resdom <- glmQLFTest(fitdom, contrast=con)
+topTags(resdom)
+@
+
+The interpretation of these changes requires some care.
+If the directionality was positive in the WT cells, a positive \code{logFC} would represent a strengthening of the domain boundary.
+However, if the WT directionality was negative, a positive \code{logFC} would represent a weakening of the domain boundary or a reversal of the domain orientation.
+To assist interpretation, it is recommended to report the condition-specific directionality values along with the test statistics.
+
+<<>>=
+output <- data.frame(as.data.frame(cur.regions)[,1:3],
+    KO=fitdom$coefficients[,"Conditionko"], 
+    Flox=fitdom$coefficients[,"Conditionflox"],
+    resdom$table, FDR=p.adjust(resdom$table$PValue, method="BH"))
+o <- order(output$PValue)
+output <- output[o,]
+head(output[,1:5], 10) # test statistics already present above
+@
+
+One can also examine whether the absolute values of the directionalities increase or decrease between conditions.
+This provides an indication of whether the domains become more or less well-defined.
+Here, domain definition seems to weaken in the KO condition.
+
+<<>>=
+is.sig <- output$FDR <= 0.05
+summary(is.sig)
+change.type <- abs(output$KO) > abs(output$Flox)
+summary(change.type[is.sig])
+@
+
+Finally, the region with the top change in directionality is visualized.
+Each rotated plaid plot shows the surrounding interaction space, with the region itself highlighted in red.
+
+<<eval=FALSE,echo=FALSE,label=dom1>>=
+rotPlaid(input[1], mm.param, region=expanded, width=2.5e4, main="Flox")
+segments(start(tophit), 0, end(tophit), 0, col="red", lwd=10)
+@
+
+<<eval=FALSE,echo=FALSE,label=dom2>>=
+rotPlaid(input[3], mm.param, region=expanded, width=2.5e4, main="KO")
+segments(start(tophit), 0, end(tophit), 0, col="red", lwd=10)
+@
+
+<<eval=TRUE,echo=FALSE,label=domset>>=
+tophit <- cur.regions[o[1]]
+expanded <- resize(tophit, fix="center", width=width(tophit)*10)
+@
+
+<<results=hide,echo=FALSE>>=
+if (as.character(seqnames(tophit))!="chr2" || start(tophit)!=48799546 || end(tophit)!=48901284) {
+	warning("first domain change hits the wrong spot")
+}
+@
+
+<<eval=FALSE>>=
+<<domset>>
+<<dom1>>
+<<dom2>>
+@
+
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{center}
+<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<dom1>>
+@ 
+\\
+<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<dom2>>
+@
+\end{center}
+\setkeys{Gin}{width=0.8\textwidth}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

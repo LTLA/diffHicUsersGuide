@@ -10,7 +10,7 @@
 \oddsidemargin -0.1in
 \evensidemargin -0.1in
 \textwidth 6.5in
-\textheight 8.3in
+\textheight 8.9in
 
 % Sweave options
 \usepackage{Sweave}
@@ -133,13 +133,13 @@ design <- model.matrix(~factor(c("flox", "flox", "ko", "ko")))
 \item converting BAM files to index files
 \item counting read pairs into pairs of genomic bins
 <<>>=
-require(diffHic)
+library(diffHic)
 param <- pairParam(fragments=fragments)
 data <- squareCounts(input, width=1e6, param=param)
 @
 \item filtering out uninteresting bin pairs
 <<>>=
-require(edgeR)
+library(edgeR)
 keep <- aveLogCPM(asDGEList(data)) > 0
 data <- data[keep,]
 @
@@ -206,7 +206,7 @@ Thus, it makes sense to report the read alignment location in terms of the restr
 The boundaries of each restriction fragment can be obtained with the \code{cutGenome} function, as shown below for the human genome after digestion with the \textit{Hin}dIII restriction enzyme (recognition site of \code{AAGCTT}, $5'$ overhang of 4 bp).
 
 <<>>=
-require(BSgenome.Hsapiens.UCSC.hg19)
+library(BSgenome.Hsapiens.UCSC.hg19)
 hs.frag <- cutGenome(BSgenome.Hsapiens.UCSC.hg19, "AAGCTT", 4)
 hs.frag
 @
@@ -476,7 +476,7 @@ Read processing has already been performed to construct an index file for each l
 Some additional work is required to obtain the restriction fragment coordinates for the \textit{Hin}dIII-digested mouse genome.
 
 <<>>=
-require(BSgenome.Mmusculus.UCSC.mm10)
+library(BSgenome.Mmusculus.UCSC.mm10)
 mm.frag <- cutGenome(BSgenome.Mmusculus.UCSC.mm10, "AAGCTT", 4)
 input <- c("merged_flox_1.h5", "merged_flox_2.h5", "merged_ko_1.h5", "merged_ko_2.h5")
 @
@@ -549,7 +549,7 @@ The coordinates can be obtained from existing annotation, as shown below for the
 Other pre-specified regions can also be used, e.g., known enhancers or protein binding sites.
 
 <<>>=
-require(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 gene.body <- genes(TxDb.Mmusculus.UCSC.mm10.knownGene)
 @
 
@@ -743,7 +743,7 @@ In this model, the overall NB mean across all libraries is (probably) an indepen
 The log-mean-per-million is known as the average abundance and can be computed with the \code{aveLogCPM} function in \edgeR{} \citep{mccarthy2012glm}.
 
 <<eval=FALSE,label=avehistplot>>=
-require(edgeR)
+library(edgeR)
 ave.ab <- aveLogCPM(asDGEList(data))
 hist(ave.ab, xlab="Average abundance")
 @
@@ -1824,6 +1824,7 @@ Cluster-level FDR control is maintained by applying the BH method on the combine
 Significant clusters are then defined at a certain FDR threshold, e.g., 5\%.
 
 <<>>=
+library(csaw)
 tabcluster <- combineTests(clustered.small$indices[[1]], result.small$table)
 head(tabcluster)
 sum(tabcluster$FDR <= 0.05)
@@ -1878,7 +1879,6 @@ The latter will identify the bin pair with the lowest $p$-value, which is useful
 Users are advised to ignore the $p$-value and FDR fields as these assume independent clustering.
 
 <<>>=
-library(csaw)
 tabcom <- combineTests(clustered.sig$indices[[1]], result$table)
 head(tabcom)
 tabbest <- getBestTest(clustered.sig$indices[[1]], result$table)

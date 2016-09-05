@@ -782,6 +782,8 @@ These strategies will be described in the rest of this chapter.
 
 \section{Directly removing low-abundance interactions}
 \label{sec:direct}
+
+\subsection{Computing the threshold from the inter-chromosomal counts}
 The simplest definition of an ``uninteresting'' interaction is that resulting from non-specific ligation. 
 These are represented by low-abundance bin pairs where no underlying contact is present to drive ligation between the corresponding bins. 
 Any changes in the counts for these bin pairs are uninteresting and are ignored.
@@ -814,7 +816,43 @@ direct.keep2 <- direct.keep & count.keep
 % Also, in theory, you could use the mitochondrial-nuclear interactions to get a cleaner estimate of the non-specific ligation rate.
 % Unfortunately, this requires a lot of effort in rescaling because of the differences in size (also copy number) which would preclude accuracy estimation.
 
+\subsection{Computing the threshold from larger bin pairs}
+The filtering procedure above assumes that no filtering has been performed during count loading with \code{squareCounts}, i.e., \code{filter} is set to unity.
+Any pre-filtering that removes low-abundance bin pairs will lead to overestimation of the filter thresholds. 
+However, it may not be practical to load counts without pre-filtering.
+For example, at small bin sizes, too many non-empty bin pairs may be present to fit into memory.
+
+To overcome this, counts are loaded for larger bin sizes without pre-filtering.
+This reduces memory usage as the interaction space is partitioned into fewer bin pairs.
+The filter threshold is computed from the larger bin pairs, and then converted into a corresponding value for the original (smaller) bin sizes.
+To illustrate, imagine that a bin size of 100 kbp is actually of interest, but filter thresholds can only be efficiently computed with 1 Mbp bins.
+The first task is to load the counts for the smaller bin pairs, using a reasonably large \code{filter} to avoid excessive memory consumption.
+
+<<>>=
+new.bin.size <- 1e5
+smaller.data <- squareCounts(input, mm.param, width=new.bin.size, filter=20)
+@
+
+Direct filtering of these smaller bin pairs can be performed using \code{filterDirect}, with assistance from their larger counterparts.
+Counts for the 1 Mbp bin pairs are supplied as the \code{reference} parameter and are used to estimate the filter threshold.
+This threshold is then adjusted for differences in size between the smaller and larger bins.
+The final value can then be used to directly filter on the abundances of the smaller bin pairs.
+Here, a minimum 5-fold change over the threshold is required for retention of each 100 Mbp bin pair.
+
+% Technically, we should do it in terms of restriction fragment pairs.
+% However, this makes it difficult to choose an appropriate prior count, as a value of 2 is way to big for a single restriction fragment.
+% Adjustment by the area in terms of restriction fragments will also tend to select for the wrong things, e.g., bin pairs involving low-complexity sequences like telomeres and centromeres.
+
+<<>>=
+direct <- filterDirect(smaller.data, reference=data)
+direct$threshold
+small.keep <- direct$abundances > direct$threshold + log2(5)
+summary(small.keep)
+@
+
 \section{Filtering as a function of interaction distance}
+
+\subsection{Computing the threshold directly from the bin pair counts}
 A more complex filter adjusts the threshold according to the distance between the bins in each bin pair. 
 In typical Hi-C datasets, larger counts are observed at lower interaction distances.
 This is probably driven by non-specific compaction of chromatin into a 3D ``globule'' conformation.
@@ -881,6 +919,29 @@ Note that the distance between bins can also be obtained directly with the \code
 Distances for inter-chromosomal bin pairs are marked as \code{NA}.
 These tend to dominate the output as they constitute most of the interaction space.
 Of course, the majority of these bin pairs will have low counts due to the sparseness of the data.
+
+\subsection{Using larger bin pairs to save memory}
+Again, the filtering strategy above assumes that no pre-filtering was performed on the counts for small bin pairs.
+To overcome this, the counts for larger bin pairs can again be used to define the thresholds.
+The trend is fitted to the abundances and distances of the larger bin pairs, and interpolation (or extrapolation) is performed to the distances of the smaller bin pairs.
+The interpolated values can then be used to filter on the abundances of the smaller bin pairs. 
+This entire procedure is done automatically within \code{filterTrended} when a \code{reference} argument is supplied, as shown below.
+
+<<>>=
+trended <- filterTrended(smaller.data, reference=data)
+summary(trended$abundances > trended$threshold)
+@
+
+Another advantage of this approach is that threshold estimation is more precise with larger counts.
+Thus, even if there is enough memory for loading smaller bin pairs with \code{filter=1}, larger bin sizes may still be preferred for computing the filter threshold.
+Otherwise, median calculation or trend fitting will be confounded by discreteness at low counts.
+
+% I thought about strategies whereby the filter threshold is computed during count loading.
+% However, this is rather inflexible (need to define the nature of the filter beforehand)
+% and outright impossible if you need to fit a global trend. We could save memory by computing 
+% average abundances on the spot and only reporting those; but this isn't a long-term solution, 
+% as the number of abundances required will depend on the number of non-empty bin pairs. Memory
+% usage will just scale up in the same manner (albeit as a fraction of that of bin pair counts).
 
 \section{Peak-calling in the interaction space}
 
@@ -1007,86 +1068,7 @@ head(mcols(en.data)$enrichment)
 % summary(enrichedPairs(chr1.data, abundances=adj.ab))
 % @
 
-\section{Defining filters in special cases}
-
-\subsection{Computing filter thresholds with limited memory}
-\label{sec:filtersmall}
-These filtering procedures assume that no filtering has been performed during count loading with \code{squareCounts}, i.e., \code{filter} is set to unity.
-Any pre-filtering that removes low-abundance bin pairs will lead to overestimation of the filter thresholds. 
-However, it may not be practical to load counts without pre-filtering.
-For example, at small bin sizes, too many non-empty bin pairs may be present to fit into memory.
-In such cases, several options are available:
-\begin{itemize}
-\item Pick an arbitrary threshold and use it to directly filter on the average abundances.
-This is simple but the chosen threshold has no obvious interpretation.
-\item Load counts for each pair of chromosomes separately, using the \code{restrict} argument as described in Section~\ref{sec:restrictchr}.
-Abundances (and distances) can be computed for each pair and collected, to define the filter threshold without loading all counts into memory.
-Counts for each chromosome pair can be reloaded for separate filtering, and the remaining bin pairs can be aggregated for downstream analysis with \code{c(...)}.
-This is quite slow.
-Also, when computing abundances, the full library size should be manually specified in \code{asDGEList}.
-This allows valid comparisons between abundances from different chromosome pairs.
-Otherwise, the library size will be different for each pair.
-<<>>=
-chr1.data <- squareCounts(input, width=1e5, filter=1,
-    param=reform(mm.param, restrict=cbind("chr1", "chr1")))
-totals <- totalCounts(input, mm.param)
-chr1.ab <- aveLogCPM(asDGEList(chr1.data, lib.size=totals))
-@
-\item Load counts for larger bin sizes without pre-filtering.
-This reduces memory usage as the interaction space is partitioned into fewer bin pairs.
-Then, perform filtering and convert the computed filter thresholds into values for the original (smaller) bin sizes.
-\end{itemize}
-
-An example of the third option is shown here.
-For this section, imagine that a bin size of 100 kbp is actually of interest, but filter thresholds can only be efficiently computed with 1 Mbp bins.
-The first task is to load the counts for the smaller bin pairs.
-A non-unity value of \code{filter} is set in \code{squareCounts} to avoid using too much memory.
-
-<<>>=
-new.bin.size <- 1e5
-smaller.data <- squareCounts(input, mm.param, width=new.bin.size, filter=20)
-@
-
-Direct filtering of these smaller bin pairs can be performed using \code{filterDirect}, with assistance from their larger counterparts.
-Counts for the 1 Mbp bin pairs are supplied as the \code{reference} parameter and are used to estimate the filter threshold.
-This threshold is then adjusted for differences in size between the smaller and larger bins.
-The final value can then be used to directly filter on the abundances of the smaller bin pairs.
-Here, a minimum 5-fold change over the threshold is required for retention of each 100 Mbp bin pair.
-
-% Technically, we should do it in terms of restriction fragment pairs.
-% However, this makes it difficult to choose an appropriate prior count, as a value of 2 is way to big for a single restriction fragment.
-% Adjustment by the area in terms of restriction fragments will also tend to select for the wrong things, e.g., bin pairs involving low-complexity sequences like telomeres and centromeres.
-
-<<>>=
-direct <- filterDirect(smaller.data, reference=data)
-direct$threshold
-small.keep <- direct$abundances > direct$threshold + log2(5)
-summary(small.keep)
-@
-
-The same approach can be used for trended filtering of small bin pairs.
-However, some extra effort is required here, as the trend is fitted to the abundances and distances of the larger bin pairs.
-Interpolation (and, if necessary, extrapolation) of the trend is performed to the distances of the smaller bin pairs. 
-The interpolated values can then be used to filter on the abundances of the smaller bin pairs. 
-This entire procedure is done automatically within \code{filterTrended} when a \code{reference} argument is supplied, as shown below.
-
-<<>>=
-trended <- filterTrended(smaller.data, reference=data)
-summary(trended$abundances > trended$threshold)
-@
-
-Another advantage of this approach is that threshold estimation is more precise with larger counts.
-Thus, even if there is enough memory for loading smaller bin pairs with \code{filter=1}, larger bin sizes may still be preferred for computing the filter threshold.
-Otherwise, median calculation or trend fitting will be confounded by discreteness at low counts.
-
-% I thought about strategies whereby the filter threshold is computed during count loading.
-% However, this is rather inflexible (need to define the nature of the filter beforehand)
-% and outright impossible if you need to fit a global trend. We could save memory by computing 
-% average abundances on the spot and only reporting those; but this isn't a long-term solution, 
-% as the number of abundances required will depend on the number of non-empty bin pairs. Memory
-% usage will just scale up in the same manner (albeit as a fraction of that of bin pair counts).
-
-\subsection{Filtering for pre-specified regions}
+\section{Filtering for pre-specified regions}
 Filtering for pairs of arbitrary regions is complicated by the potential irregularity of the regions.
 In particular, there is no guarantee that the supplied regions will cover the entirety of the interaction space.
 Filter thresholds may not be estimated accurately if the covered area is not representative of the rest of the space.
@@ -1137,7 +1119,7 @@ summary(aveLogCPM(asDGEList(redata)))
 %\end{center}
 %\setkeys{Gin}{width=0.8\textwidth}
 
-\subsection{Filtering out diagonal elements}
+\section{Filtering out diagonal elements}
 Incomplete removal of artifacts (e.g., dangling ends, self-circles) will generally manifest as increased counts for diagonal bin pairs, i.e., pairs of the same bin.
 If artifact generation and/or removal is not consistent between libraries, the behavior of the diagonal elements will differ markedly from the other bin pairs.
 This can be diagnosed using MA plots between libraries, where the diagonal elements show up as a distinct mass that is unconnected to the rest of the points.

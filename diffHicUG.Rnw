@@ -1312,6 +1312,11 @@ If this assumption does not hold, genuine differences may be lost upon normaliza
 For example, a global increase in the compaction of the genome would manifest as an upward trend in the MA plot, as low-abundance distal interactions are weakened in favor of high-abundance short-range interactions.
 In such cases, the simpler scaling strategy described in Section~\ref{sec:simplenorm} may be more appropriate.
 
+% Some exceptions include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
+% In such cases, it's not clear how to normalize as you can't assume non-DE.
+% (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
+% This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
+
 \section{Iterative correction of interaction intensities}
 \label{sec:itercor}
 While this is not the intended function of the \pkgname{} package, a method is also provided for the removal of biases between genomic regions.

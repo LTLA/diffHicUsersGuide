@@ -262,11 +262,6 @@ This process is demonstrated using Hi-C data from GM06990 cells.
 \begin{Sinput}
 > diagnostics <- preparePairs("SRR027957.bam", hs.param, 
 +     file="SRR027957.h5", dedup=TRUE, minq=10)
-\end{Sinput}
-\begin{Soutput}
-[1] "Set libver lower bound to 18"
-\end{Soutput}
-\begin{Sinput}
 > diagnostics
 \end{Sinput}
 \begin{Soutput}
@@ -340,7 +335,6 @@ Retained read pairs are stored in another index file for later use.
 +     max.frag=600, min.inward=min.inward, min.outward=min.outward)
 \end{Sinput}
 \begin{Soutput}
-[1] "Set libver lower bound to 18"
    total   length   inward  outward retained 
  4898260   871731    94961    84254  3860024 
 \end{Soutput}
@@ -453,23 +447,10 @@ An example is provided below that merges several technical replicates for a GM06
 \begin{Sinput}
 > prepped <- preparePairs("SRR027958.bam", hs.param, file="SRR027958.h5", 
 +     dedup=TRUE, minq=10)
-\end{Sinput}
-\begin{Soutput}
-[1] "Set libver lower bound to 18"
-\end{Soutput}
-\begin{Sinput}
 > counted <- prunePairs("SRR027958.h5", hs.param, file.out="SRR027958_trimmed.h5", 
 +     max.frag=600, min.inward=min.inward, min.outward=min.outward)
-\end{Sinput}
-\begin{Soutput}
-[1] "Set libver lower bound to 18"
-\end{Soutput}
-\begin{Sinput}
 > mergePairs(files=c("SRR027957_trimmed.h5", "SRR027958_trimmed.h5"), "merged.h5")
 \end{Sinput}
-\begin{Soutput}
-[1] "Set libver lower bound to 18"
-\end{Soutput}
 \end{Schunk}
 
 In addition, any Hi-C dataset that is processed manually by the user can be stored in an index file using the \code{savePairs} function.
@@ -484,9 +465,6 @@ If the dataset is too large, one can save chunks at a time before merging them a
 > dummy <- data.frame(anchor1.id, anchor2.id, other.data=as.integer(runif(100, 1, 100)))
 > savePairs(dummy, "example.h5", hs.param)
 \end{Sinput}
-\begin{Soutput}
-[1] "Set libver lower bound to 18"
-\end{Soutput}
 \end{Schunk}
 
 For full compatibility, users should include the alignment positions and lengths for each read pair as \code{anchorX.pos} and \code{anchorX.len},
@@ -517,7 +495,6 @@ The hg19 genome is segmented into 500 bp pseudo-fragments, and reads are then as
 +     dedup=TRUE, minq=10)
 \end{Sinput}
 \begin{Soutput}
-[1] "Set libver lower bound to 18"
 $pairs
    total   marked filtered   mapped 
  7068675   103594  1532760  5460120 
@@ -1074,7 +1051,7 @@ These strategies will be described in the rest of this chapter.
 \section{Directly removing low-abundance interactions}
 \label{sec:direct}
 
-\subsection{Computing the threshold from the inter-chromosomal counts}
+\subsection{Computing the threshold from inter-chromosomal counts}
 The simplest definition of an ``uninteresting'' interaction is that resulting from non-specific ligation. 
 These are represented by low-abundance bin pairs where no underlying contact is present to drive ligation between the corresponding bins. 
 Any changes in the counts for these bin pairs are uninteresting and are ignored.
@@ -1121,8 +1098,8 @@ In practice, the direct filter can be combined with \code{count.keep} to ensure 
 % Unfortunately, this requires a lot of effort in rescaling because of the differences in size (also copy number) which would preclude accuracy estimation.
 
 \subsection{Computing the threshold from larger bin pairs}
-The filtering procedure above assumes that no filtering has been performed during count loading with \code{squareCounts}, i.e., \code{filter} is set to unity.
-Any pre-filtering that removes low-abundance bin pairs will lead to overestimation of the filter thresholds. 
+The procedure above assumes that no additional filtering has been performed during count loading with \code{squareCounts}, i.e., \code{filter} is set to unity.
+Any pre-filtering that removes low-abundance bin pairs will inflate the median and lead to overestimation of the filter threshold. 
 However, it may not be practical to load counts without pre-filtering.
 For example, at small bin sizes, too many non-empty bin pairs may be present to fit into memory.
 
@@ -1141,9 +1118,9 @@ The first task is to load the counts for the smaller bin pairs, using a reasonab
 
 Direct filtering of these smaller bin pairs can be performed using \code{filterDirect}, with assistance from their larger counterparts.
 Counts for the 1 Mbp bin pairs are supplied as the \code{reference} parameter and are used to estimate the filter threshold.
-This threshold is then adjusted for differences in size between the smaller and larger bins.
+This threshold is adjusted for differences in size between the smaller and larger bins.
 The final value can then be used to directly filter on the abundances of the smaller bin pairs.
-Here, a minimum 5-fold change over the threshold is required for retention of each 100 Mbp bin pair.
+Here, a minimum 5-fold change over the threshold is required for the retention of each 100 Mbp bin pair.
 
 % Technically, we should do it in terms of restriction fragment pairs.
 % However, this makes it difficult to choose an appropriate prior count, as a value of 2 is way to big for a single restriction fragment.
@@ -1254,11 +1231,11 @@ These tend to dominate the output as they constitute most of the interaction spa
 Of course, the majority of these bin pairs will have low counts due to the sparseness of the data.
 
 \subsection{Using larger bin pairs to save memory}
-Again, the filtering strategy above assumes that no pre-filtering was performed on the counts for small bin pairs.
-To overcome this, the counts for larger bin pairs can again be used to define the thresholds.
-The trend is fitted to the abundances and distances of the larger bin pairs, and interpolation (or extrapolation) is performed to the distances of the smaller bin pairs.
-The interpolated values can then be used to filter on the abundances of the smaller bin pairs. 
-This entire procedure is done automatically within \code{filterTrended} when a \code{reference} argument is supplied, as shown below.
+The procedure above assumes that no pre-filtering was performed on the counts for small bin pairs.
+In situations with limited memory, the counts for larger bin pairs can again be used to define the thresholds.
+The trend is fitted to the abundances and distances of the larger bin pairs, and interpolation (or extrapolation) is performed to obtain fitted values at the distances of the smaller bin pairs.
+The interpolated trend can then be applied to filter the smaller bin pairs based on their abundances.
+This entire process is done automatically within \code{filterTrended} when a \code{reference} argument is supplied, as shown below.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -1695,6 +1672,11 @@ Any systematic differences between libraries are assumed to be technical in orig
 If this assumption does not hold, genuine differences may be lost upon normalization.
 For example, a global increase in the compaction of the genome would manifest as an upward trend in the MA plot, as low-abundance distal interactions are weakened in favor of high-abundance short-range interactions.
 In such cases, the simpler scaling strategy described in Section~\ref{sec:simplenorm} may be more appropriate.
+
+% Some exceptions include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
+% In such cases, it's not clear how to normalize as you can't assume non-DE.
+% (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
+% This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
 
 \section{Iterative correction of interaction intensities}
 \label{sec:itercor}
@@ -2909,7 +2891,7 @@ The same filter is applied to the set of genomic bins to match with the entries 
 Normalization is not performed here as it is not required. 
 The model contains sample-specific blocking factors, which largely negates the need for normalization between samples.
 Additionally, the differential test for each bin will compare directionality values between conditions.
-This means that any biases between the up- and downstrem counts within each library or condition (e.g., due to mappability of different regions) should cancel out.
+This means that any biases between the up- and downstream counts within each library or condition (e.g., due to mappability of different regions) should cancel out.
 
 \section{Testing for significant differences with \edgeR{}}
 The analysis proceeds directly to dispersion estimation and GLM fitting.
@@ -2944,7 +2926,7 @@ A GLM is fitted to the counts for each bin using the specified model and the tre
 \setkeys{Gin}{width=0.8\textwidth}
 
 
-The aim of the differential analysis is to identify bins where the directionality values differ between conditions.
+The aim of the differential analysis is to identify bins where the directionality values change between conditions.
 The \code{makeContrasts} function is used to construct an appropriate contrast vector, and the QL F-test is applied to detect significant differences.
 
 \begin{Schunk}
@@ -2972,13 +2954,13 @@ Coefficient:  -1*Conditionflox 1*Conditionko
 The interpretation of these changes requires some care.
 If the directionality was positive in the WT cells, a positive \code{logFC} would represent a strengthening of the domain boundary.
 However, if the WT directionality was negative, a positive \code{logFC} would represent a weakening of the domain boundary or a reversal of the domain orientation.
-To assist interpretation, users should report the condition-specific directionality values in the output.
+To assist interpretation, users are advised to report the condition-specific directionality values in the output.
 
 \begin{Schunk}
 \begin{Sinput}
 > output <- data.frame(as.data.frame(cur.regions)[,1:3],
-+     KO=fitdom$coefficients[,"Conditionko"], 
-+     Flox=fitdom$coefficients[,"Conditionflox"],
++     KO=fitdom$coefficients[,"Conditionko"]/log(2),
++     Flox=fitdom$coefficients[,"Conditionflox"]/log(2),
 +     resdom$table, FDR=p.adjust(resdom$table$PValue, method="BH"))
 > o <- order(output$PValue)
 > output <- output[o,]
@@ -2986,16 +2968,16 @@ To assist interpretation, users should report the condition-specific directional
 \end{Sinput}
 \begin{Soutput}
       seqnames     start       end         KO       Flox
-2386      chr2  48799546  48901284 -0.3499094 -1.0422484
-4595      chr3  90499471  90598684 -0.5924555  0.1758025
-1408      chr1 143599379 143696849 -0.1815183 -0.9193785
-14712    chr10 105698492 105799539 -0.6022480 -1.2083037
-5606      chr4  34499260  34602534 -0.1614795 -0.8359789
-12073     chr8  89700733  89799215 -0.3758294 -0.9347454
-1872      chr1 190000997 190100303  0.6191579  1.1604824
-16854    chr12  73005689  73097744  0.5470104  1.1297162
-757       chr1  78500961  78603837  0.3666146  0.9161535
-6323      chr4 106298974 106398973  0.1322746 -0.4541218
+2386      chr2  48799546  48901284 -0.5048126 -1.5036466
+4595      chr3  90499471  90598684 -0.8547325  0.2536294
+1408      chr1 143599379 143696849 -0.2618755 -1.3263828
+14712    chr10 105698492 105799539 -0.8688601 -1.7432137
+5606      chr4  34499260  34602534 -0.2329656 -1.2060626
+12073     chr8  89700733  89799215 -0.5422071 -1.3485526
+1872      chr1 190000997 190100303  0.8932561  1.6742222
+16854    chr12  73005689  73097744  0.7891691  1.6298359
+757       chr1  78500961  78603837  0.5289130  1.3217301
+6323      chr4 106298974 106398973  0.1908319 -0.6551592
 \end{Soutput}
 \end{Schunk}
 
@@ -3121,24 +3103,24 @@ other attached packages:
 [10] Biostrings_2.41.4                       
 [11] XVector_0.13.7                          
 [12] edgeR_3.15.2                            
-[13] limma_3.29.20                           
-[14] diffHic_1.5.5                           
-[15] InteractionSet_1.1.5                    
+[13] limma_3.29.21                           
+[14] diffHic_1.5.6                           
+[15] InteractionSet_1.1.6                    
 [16] SummarizedExperiment_1.3.82             
 [17] Biobase_2.33.3                          
-[18] GenomicRanges_1.25.93                   
-[19] GenomeInfoDb_1.9.7                      
-[20] IRanges_2.7.14                          
-[21] S4Vectors_0.11.13                       
+[18] GenomicRanges_1.25.94                   
+[19] GenomeInfoDb_1.9.12                     
+[20] IRanges_2.7.15                          
+[21] S4Vectors_0.11.16                       
 [22] BiocGenerics_0.19.2                     
 
 loaded via a namespace (and not attached):
  [1] splines_3.3.1           zlibbioc_1.19.0         GenomicAlignments_1.9.6
- [4] statmod_1.4.26          lattice_0.20-33         tools_3.3.1            
- [7] grid_3.3.1              rhdf5_2.17.5            KernSmooth_2.23-15     
-[10] DBI_0.5                 Rhtslib_1.5.3           Matrix_1.2-7.1         
+ [4] statmod_1.4.26          lattice_0.20-34         tools_3.3.1            
+ [7] grid_3.3.1              rhdf5_2.17.6            KernSmooth_2.23-15     
+[10] DBI_0.5-1               Rhtslib_1.5.3           Matrix_1.2-7.1         
 [13] bitops_1.0-6            biomaRt_2.29.2          RCurl_1.95-4.8         
-[16] RSQLite_1.0.0           Rsamtools_1.25.1        locfit_1.5-9.1         
+[16] RSQLite_1.0.0           Rsamtools_1.25.2        locfit_1.5-9.1         
 [19] XML_3.98-1.4           
 \end{Soutput}
 \end{Schunk}

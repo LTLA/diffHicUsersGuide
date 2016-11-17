@@ -725,7 +725,7 @@ The count matrix and the vector of totals are defined as previously described.
 \end{Sinput}
 \begin{Soutput}
 class: InteractionSet 
-dim: 12846178 4 
+dim: 12926724 4 
 metadata(1): param
 assays(1): counts
 rownames: NULL
@@ -733,7 +733,7 @@ rowData names(0):
 colnames: NULL
 colData names(1): totals
 type: ReverseStrictGInteractions
-regions: 23956
+regions: 24044
 \end{Soutput}
 \end{Schunk}
 
@@ -750,12 +750,12 @@ Resorting is also performed, though the indices of the original regions can be f
 GRanges object with 6 ranges and 3 metadata columns:
          seqnames             ranges strand |     gene_id    nfrags  original
             <Rle>          <IRanges>  <Rle> | <character> <integer> <integer>
-  497097     chr1 [3211067, 3675240]      * |      497097       197     15308
-   19888     chr1 [4286646, 4409818]      * |       19888        49      7044
-   20671     chr1 [4487488, 4498343]      * |       20671         2      7432
-   27395     chr1 [4772601, 4786029]      * |       27395         3     13056
-   18777     chr1 [4802092, 4847111]      * |       18777         8      6474
-   21399     chr1 [4856126, 4899085]      * |       21399        16      8121
+  497097     chr1 [3211067, 3675240]      * |      497097       197     15372
+   19888     chr1 [4286646, 4409818]      * |       19888        49      7094
+   20671     chr1 [4487488, 4498343]      * |       20671         2      7482
+   27395     chr1 [4772601, 4786029]      * |       27395         3     13110
+   18777     chr1 [4802092, 4847111]      * |       18777         8      6523
+   21399     chr1 [4856126, 4899085]      * |       21399        16      8171
   -------
   seqinfo: 66 sequences (1 circular) from mm10 genome
 \end{Soutput}
@@ -1028,8 +1028,8 @@ The example below identifies those bin pairs with an overall NB mean not less th
 > summary(count.keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical 2433389  885711       0 
+   Mode   FALSE    TRUE 
+logical 2433389  885711 
 \end{Soutput}
 \end{Schunk}
 
@@ -1075,8 +1075,8 @@ Here, the threshold is defined as a minimum fold change of 5 above this estimate
 > summary(direct.keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical 3159187  159913       0 
+   Mode   FALSE    TRUE 
+logical 3159187  159913 
 \end{Soutput}
 \end{Schunk}
 
@@ -1132,15 +1132,15 @@ Here, a minimum 5-fold change over the threshold is required for the retention o
 > direct$threshold
 \end{Sinput}
 \begin{Soutput}
-[1] -5.088111
+[1] -5.087542
 \end{Soutput}
 \begin{Sinput}
 > small.keep <- direct$abundances > direct$threshold + log2(5)
 > summary(small.keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical  425794  635051       0 
+   Mode   FALSE    TRUE 
+logical  426056  634789 
 \end{Soutput}
 \end{Schunk}
 
@@ -1192,8 +1192,8 @@ This favors selection of longer-range interactions, compared to the direct filte
 > summary(trend.keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical 1445284 1873816       0 
+   Mode   FALSE    TRUE 
+logical 1445284 1873816 
 \end{Soutput}
 \end{Schunk}
 
@@ -1211,8 +1211,8 @@ The example below retains bin pairs with abundances that are two-fold higher tha
 > summary(trend.keep2)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical 3081407  237693       0 
+   Mode   FALSE    TRUE 
+logical 3081407  237693 
 \end{Soutput}
 \end{Schunk}
 
@@ -1243,8 +1243,8 @@ This entire process is done automatically within \code{filterTrended} when a \co
 > summary(trended$abundances > trended$threshold)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical  616092  444753       0 
+   Mode   FALSE    TRUE 
+logical  625765  435080 
 \end{Soutput}
 \end{Schunk}
 
@@ -1275,7 +1275,7 @@ This extends the concept of peak calling on the linear genome to the 2-dimension
 \end{Sinput}
 \begin{Soutput}
      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
--11.58000  -0.46120  -0.16740  -0.22830   0.08722  10.32000 
+-11.57538  -0.46117  -0.16739  -0.22830   0.08722  10.31538 
 \end{Soutput}
 \end{Schunk}
 
@@ -1471,8 +1471,8 @@ Removal can be achieved by generating the \code{ndiag.keep} logical vector for f
 > summary(ndiag.keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical    2614 3316486       0 
+   Mode   FALSE    TRUE 
+logical    2614 3316486 
 \end{Soutput}
 \end{Schunk}
 
@@ -2246,7 +2246,7 @@ Identification of the top-ranking bin pair within each cluster may also be desir
 > length(clustered.small$interactions)
 \end{Sinput}
 \begin{Soutput}
-[1] 33159
+[1] 33139
 \end{Soutput}
 \begin{Sinput}
 > head(clustered.small$interactions)
@@ -2262,7 +2262,7 @@ ReverseStrictGInteractions object with 6 interactions and 0 metadata columns:
   [5]      chr1 [5001372, 5997485] ---      chr1 [3004106, 4000741]
   [6]      chr1 [5001372, 5997485] ---      chr1 [4000738, 5001375]
   -------
-  regions: 29933 ranges and 0 metadata columns
+  regions: 29896 ranges and 0 metadata columns
   seqinfo: 66 sequences from an unspecified genome
 \end{Soutput}
 \end{Schunk}
@@ -2309,18 +2309,18 @@ Significant clusters are then defined at a certain FDR threshold, e.g., 5\%.
 \end{Sinput}
 \begin{Soutput}
   nWindows logFC.up logFC.down       PValue          FDR
-1        1        0          1 3.252547e-02 1.389040e-01
-2       55        0          0 2.639094e-02 1.192393e-01
-3       99        1         10 2.926334e-01 5.476904e-01
-4       55        0          6 8.599160e-10 7.543093e-08
-5       99       26          4 1.598863e-01 3.894565e-01
-6      100        1         14 8.517756e-05 1.032311e-03
+1        1        0          1 3.251461e-02 1.388666e-01
+2       55        0          0 2.636977e-02 1.190695e-01
+3       99        1         10 2.925148e-01 5.475090e-01
+4       55        0          6 8.591867e-10 7.521332e-08
+5       99       26          4 1.598432e-01 3.888596e-01
+6      100        1         14 8.480900e-05 1.027224e-03
 \end{Soutput}
 \begin{Sinput}
 > sum(tabcluster$FDR <= 0.05)
 \end{Sinput}
 \begin{Soutput}
-[1] 5634
+[1] 5629
 \end{Soutput}
 \end{Schunk}
 
@@ -2458,7 +2458,7 @@ Both \code{diClusters} and \code{clusterPairs} accept multiple \code{Interaction
 > length(clustered.mult$interactions)
 \end{Sinput}
 \begin{Soutput}
-[1] 11084
+[1] 11091
 \end{Soutput}
 \end{Schunk}
 
@@ -2500,16 +2500,16 @@ The BH method is then applied to the combined $p$-values to control the cluster-
   nWindows logFC.up logFC.down       PValue          FDR
 1        2        0          2 8.290943e-04 2.311825e-02
 2       56        0          0 1.043286e-02 1.301009e-01
-3      100        1         10 3.732473e-01 7.055931e-01
-4       56        0          6 1.719832e-09 6.743133e-07
-5      100       26          4 3.197727e-01 6.632996e-01
-6      101        1         14 1.703551e-04 6.817998e-03
+3      100        1         10 3.732473e-01 7.056014e-01
+4       56        0          6 1.718373e-09 6.708121e-07
+5      100       26          4 3.196865e-01 6.632161e-01
+6      101        1         14 1.696180e-04 6.788497e-03
 \end{Soutput}
 \begin{Sinput}
 > sum(cons$FDR <= 0.05)
 \end{Sinput}
 \begin{Soutput}
-[1] 7618
+[1] 7619
 \end{Soutput}
 \end{Schunk}
 
@@ -2546,12 +2546,12 @@ However, keep in mind that the FDR is computed with respect to the features, not
 \end{Sinput}
 \begin{Soutput}
    start1    end1  start2    end2      logFC         F
-1 3004106 3100835       1 3004109 -0.7240343  4.570594
-2 3004106 3100835 3004106 3100835  0.3348253 11.299905
-3 4801990 4899085 3801896 3901860 -1.2225304  7.670305
-4 4693997 4801993 4500265 4599273 -0.8968578 45.453800
-5 5599281 5695146 3004106 3100835  1.0039351  9.068032
-6 5001372 5100850 4801990 4899085 -0.5602809 23.249664
+1 3004106 3100835       1 3004109 -0.7240461  4.571166
+2 3004106 3100835 3004106 3100835  0.3347865 11.298605
+3 4801990 4899085 3801896 3901860 -1.2225469  7.671230
+4 4693997 4801993 4500265 4599273 -0.8968364 45.455462
+5 5599281 5695146 3004106 3100835  1.0039228  9.068671
+6 5001372 5100850 4801990 4899085 -0.5602859 23.252441
 \end{Soutput}
 \begin{Sinput}
 > expanded <- rep(NA, nrow(results.b)) # As some parents do not have nested elements.
@@ -2875,8 +2875,8 @@ This is because \code{domainDirections} effectively counts read pairs for highly
 > summary(keep)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical    1602   25127       0 
+   Mode   FALSE    TRUE 
+logical    1602   25127 
 \end{Soutput}
 \end{Schunk}
 
@@ -2991,16 +2991,16 @@ Here, domain definition seems to weaken in the KO condition.
 > summary(is.sig)
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical   19339    5788       0 
+   Mode   FALSE    TRUE 
+logical   19339    5788 
 \end{Soutput}
 \begin{Sinput}
 > change.type <- abs(output$KO) > abs(output$Flox)
 > summary(change.type[is.sig])
 \end{Sinput}
 \begin{Soutput}
-   Mode   FALSE    TRUE    NA's 
-logical    4174    1614       0 
+   Mode   FALSE    TRUE 
+logical    4174    1614 
 \end{Soutput}
 \end{Schunk}
 
@@ -3074,7 +3074,7 @@ Some software packages are also required - read \code{sra2bam.sh} for more detai
 > sessionInfo()
 \end{Sinput}
 \begin{Soutput}
-R version 3.3.1 Patched (2016-08-08 r71066)
+R Under development (unstable) (2016-10-20 r71540)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: CentOS release 6.4 (Final)
 
@@ -3091,37 +3091,37 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] csaw_1.7.3                              
- [2] BiocParallel_1.7.8                      
- [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.2.2
- [4] GenomicFeatures_1.25.16                 
- [5] AnnotationDbi_1.35.4                    
+ [1] csaw_1.9.1                              
+ [2] BiocParallel_1.9.1                      
+ [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.0
+ [4] GenomicFeatures_1.27.2                  
+ [5] AnnotationDbi_1.37.0                    
  [6] BSgenome.Mmusculus.UCSC.mm10_1.4.0      
  [7] BSgenome.Hsapiens.UCSC.hg19_1.4.0       
- [8] BSgenome_1.41.2                         
- [9] rtracklayer_1.33.12                     
-[10] Biostrings_2.41.4                       
-[11] XVector_0.13.7                          
-[12] edgeR_3.15.2                            
-[13] limma_3.29.21                           
-[14] diffHic_1.5.6                           
-[15] InteractionSet_1.1.6                    
-[16] SummarizedExperiment_1.3.82             
-[17] Biobase_2.33.3                          
-[18] GenomicRanges_1.25.94                   
-[19] GenomeInfoDb_1.9.12                     
-[20] IRanges_2.7.15                          
-[21] S4Vectors_0.11.16                       
-[22] BiocGenerics_0.19.2                     
+ [8] BSgenome_1.43.1                         
+ [9] rtracklayer_1.35.1                      
+[10] Biostrings_2.43.0                       
+[11] XVector_0.15.0                          
+[12] edgeR_3.17.2                            
+[13] limma_3.31.3                            
+[14] diffHic_1.7.1                           
+[15] InteractionSet_1.3.1                    
+[16] SummarizedExperiment_1.5.3              
+[17] Biobase_2.35.0                          
+[18] GenomicRanges_1.27.7                    
+[19] GenomeInfoDb_1.11.5                     
+[20] IRanges_2.9.8                           
+[21] S4Vectors_0.13.2                        
+[22] BiocGenerics_0.21.0                     
 
 loaded via a namespace (and not attached):
- [1] splines_3.3.1           zlibbioc_1.19.0         GenomicAlignments_1.9.6
- [4] statmod_1.4.26          lattice_0.20-34         tools_3.3.1            
- [7] grid_3.3.1              rhdf5_2.17.6            KernSmooth_2.23-15     
-[10] DBI_0.5-1               Rhtslib_1.5.3           Matrix_1.2-7.1         
-[13] bitops_1.0-6            biomaRt_2.29.2          RCurl_1.95-4.8         
-[16] RSQLite_1.0.0           Rsamtools_1.25.2        locfit_1.5-9.1         
-[19] XML_3.98-1.4           
+ [1] splines_3.4.0            zlibbioc_1.21.0          GenomicAlignments_1.11.2
+ [4] statmod_1.4.26           lattice_0.20-34          tools_3.4.0             
+ [7] grid_3.4.0               rhdf5_2.19.0             KernSmooth_2.23-15      
+[10] DBI_0.5-1                Rhtslib_1.7.0            Matrix_1.2-7.1          
+[13] bitops_1.0-6             biomaRt_2.31.1           RCurl_1.95-4.8          
+[16] RSQLite_1.0.0            Rsamtools_1.27.2         locfit_1.5-9.1          
+[19] XML_3.98-1.5            
 \end{Soutput}
 \end{Schunk}
 

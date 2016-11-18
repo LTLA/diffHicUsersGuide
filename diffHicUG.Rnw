@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 5 September 2016}
+Last revised 18 November 2016}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -116,7 +116,7 @@ Of course, some caution is required due to the presence of non-specific ligation
 
 \section{Quick start}
 A typical differential analysis of Hi-C data is described below.
-For simplicity, assume that the the BAM files have already been processed into index files in \code{input}.
+For simplicity, assume that the BAM files have already been processed into index files in \code{input}.
 Let \code{design} contain the design matrix for this experiment.
 Also assume that the boundaries of the relevant restriction fragments are present in \code{fragments}.
 The code itself is split across several steps: 
@@ -1228,7 +1228,8 @@ Trended biases can be generated from uncontrolled differences in library prepara
 This is particularly problematic for Hi-C data, given the complexity of the protocol. 
 Changes in cross-linking efficiency or ligation specificity can lead to a systematic redistribution of read pairs throughout the interaction space. 
 For example, reduced specificity may result in more counts for weak non-specific interactions, and fewer counts for strong genuine interactions.
-Such biases may manifest as an abundance-dependent trend in a MA plot between replicates.
+Such biases may manifest as an abundance-dependent trend in a MA plot between libraries.
+The example below compares one library from each group, which can be repeated for each pair of libraries -- especially between replicates, where the trend must be technical in origin.
 
 <<echo=FALSE,eval=FALSE,label=maunnorm>>=
 ab <- aveLogCPM(asDGEList(data))
@@ -1238,7 +1239,7 @@ adj.counts <- cpm(asDGEList(data), log=TRUE)
 
 <<echo=FALSE,eval=FALSE,label=makema>>=
 mval <- adj.counts[,3]-adj.counts[,2]
-smoothScatter(ab, mval, xlab="A", ylab="M", main="KO vs. Flox")
+smoothScatter(ab, mval, xlab="A", ylab="M", main="KO (1) vs. Flox (2)")
 fit <- loessFit(x=ab, y=mval)
 lines(ab[o], fit$fitted[o], col="red")
 @

@@ -1164,7 +1164,7 @@ This would not be possible if the threshold value was chosen arbitrarily.
 
 The choice of filtering method depends on the features that are most likely to be of interest in each analysis.
 In general, less aggressive filtering should be performed if these features are not well defined.
-Here, a tentative recommendation is provided for direct filtering as the irrelevance of non-specific ligation is indisputable.
+Here, a tentative recommendation is provided for direct filtering as it is reasonable to discard non-specific ligation events.
 On a practical level, the simplicity of the direct approach is attractive and will be used throughout the rest of the guide.
 
 <<>>=
@@ -1218,6 +1218,13 @@ Here, the normalization factors differ from unity as the library size alone is n
 <<>>=
 tmm.facs <- normOffsets(data)
 tmm.facs
+@
+
+The normalization factors can be stored in the \code{colData} of the \code{InteractionSet} object.
+This simplifies data management by avoiding the need to keep track of separate objects.
+
+<<>>=
+data$norm.factors <- libsize.facs
 @
 
 In practice, scaling methods are usually too simplistic.
@@ -1317,6 +1324,13 @@ In such cases, the simpler scaling strategy described in Section~\ref{sec:simple
 % In such cases, it's not clear how to normalize as you can't assume non-DE.
 % (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
 % This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
+
+Finally, the offsets can be stored in the \code{InteractionSet} object as an additional matrix in \code{assays}.
+This synchronises operations like subsetting on both the counts and offsets.
+
+<<>>=
+assays(data)$offset <- nb.off
+@
 
 \section{Iterative correction of interaction intensities}
 \label{sec:itercor}
@@ -1622,6 +1636,8 @@ The \code{InteractionSet} object is also converted into a \code{DGEList} object 
 To include the normalization offsets that were previously computed with the NB-loess method, the offset matrix is assigned to \code{y\$offset}.
 However, if normalization factors were computed instead, these can be incorporated via the \code{norm.factors} argument in \code{asDGEList}.
 Note that the offset matrix will take precedence over scaling factors in \edgeR{} analyses.
+(If either the normalization factors or offsets are already stored in certain fields of \code{data}, as previously described, then they will be automatically extracted and used by \code{asDGEList}.
+Manual setting of \code{y\$offset} is shown below only for demonstration purposes.)
 
 <<>>=
 y <- asDGEList(data)
@@ -1731,7 +1747,14 @@ topTags(result)
 More savvy users might wonder why the likelihood ratio test (LRT) was not used here.
 Indeed, the LRT is the more obvious test for any inferences involving GLMs. 
 However, the QL F-test is preferred as it accounts for the variability and uncertainty of the QL dispersion estimates \citep{lund2012ql}. 
-This means that it can maintain type I error control in the presence of heteroskedasticity, whereas the LRT does not.
+This means that it can maintain more accurate control of the type I error rate compared to the LRT in the presence of limited replication.
+
+It is also convenient to store the significance statistics in the \code{rowData} of the \code{InteractionSet} object.
+This ensures that any operations like subsetting are applied on both the genomic coordinates and statistics simultaneously, which simplifies data management.
+
+<<>>=
+rowData(data) <- cbind(rowData(data), result$table)
+@
 
 \section{Multiplicity correction and the FDR}
 
@@ -1846,6 +1869,14 @@ o.i <- order(results.i$PValue)
 write.table(results.i[o.i,], file="independent.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 @
 
+The statistics can also stored in the \code{rowData} of the \code{GInteractions} object returned by \code{clusterPairs}. 
+This ensures that the genomic coordinates and statistics are synchronised.
+
+<<>>=
+rowData(clustered.small$interactions) <- cbind(
+    rowData(clustered.small$interactions), tabcluster)
+@
+
 \subsection{Clustering based on significant bin pairs}
 \label{sec:sigclust}
 The interaction space is often dominated by high-abundance structural features like domains and compartments. 
@@ -1895,10 +1926,16 @@ Test statistics are saved to file for later examination, along with the coordina
 The combined $p$-value from \code{combineTests} is stored but is only used for sorting and should not be interpreted as a significance measure.
 
 <<>>=
-results.d <- data.frame(as.data.frame(clustered.sig$interactions)[,useful.cols],
-    tabcom[,1:4], logFC=tabbest$logFC, FDR=clustered.sig$FDR)
+tabstats <- data.frame(tabcom[,1:4], logFC=tabbest$logFC, FDR=clustered.sig$FDR)
+results.d <- data.frame(as.data.frame(clustered.sig$interactions)[,useful.cols], tabstats)
 o.d <- order(results.d$PValue)
 write.table(results.d[o.d,], file="DIclusters.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+@
+
+Again, the statistics can stored in the \code{rowData} of \code{GInteractions} object.
+
+<<>>=
+rowData(clustered.sig$interactions) <- cbind(rowData(clustered.sig$interactions), tabstat)
 @
 
 \section{Merging results from different bin widths}

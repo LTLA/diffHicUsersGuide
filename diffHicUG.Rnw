@@ -1869,12 +1869,12 @@ o.i <- order(results.i$PValue)
 write.table(results.i[o.i,], file="independent.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 @
 
-The statistics can also stored in the \code{rowData} of the \code{GInteractions} object returned by \code{clusterPairs}. 
+The statistics can also stored in the metadata of the \code{GInteractions} object returned by \code{clusterPairs}. 
 This ensures that the genomic coordinates and statistics are synchronised.
 
 <<>>=
-rowData(clustered.small$interactions) <- cbind(
-    rowData(clustered.small$interactions), tabcluster)
+mcols(clustered.small$interactions) <- cbind(
+    mcols(clustered.small$interactions), tabcluster)
 @
 
 \subsection{Clustering based on significant bin pairs}
@@ -1932,10 +1932,10 @@ o.d <- order(results.d$PValue)
 write.table(results.d[o.d,], file="DIclusters.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 @
 
-Again, the statistics can stored in the \code{rowData} of \code{GInteractions} object.
+Again, the statistics can stored in the metadata of \code{GInteractions} object.
 
 <<>>=
-rowData(clustered.sig$interactions) <- cbind(rowData(clustered.sig$interactions), tabstat)
+mcols(clustered.sig$interactions) <- cbind(mcols(clustered.sig$interactions), tabstats)
 @
 
 \section{Merging results from different bin widths}

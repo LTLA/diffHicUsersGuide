@@ -1,0 +1,271 @@
+\documentclass[12pt]{report}
+\usepackage{fancyvrb,graphicx,natbib,url,comment,import,bm}
+\usepackage{tikz}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{parsep=0pt,listparindent=\parindent}
+
+% Margins
+\topmargin -0.1in
+\headheight 0in
+\headsep 0in
+\oddsidemargin -0.1in
+\evensidemargin -0.1in
+\textwidth 6.5in
+\textheight 8.3in
+
+% Sweave options
+\usepackage{Sweave}
+\SweaveOpts{keep.source=TRUE,prefix.string=plots-com/ug,png=TRUE,pdf=FALSE}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{fontshape=sl,fontsize=\footnotesize}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{fontsize=\footnotesize}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{fontsize=\footnotesize}
+\renewenvironment{Schunk}{\vspace{0pt}}{\vspace{0pt}}
+
+\DefineVerbatimEnvironment{Rcode}{Verbatim}{fontsize=\footnotesize}
+\newcommand{\edger}{edgeR}
+\newcommand{\pkgname}{csaw}
+\newcommand{\code}[1]{{\small\texttt{#1}}}
+\newcommand{\R}{\textsf{R}}
+
+<<results=hide,echo=FALSE>>=
+#picdir <- "plots-com"
+#if (file.exists(picdir)) { unlink(picdir, recursive=TRUE) }
+#dir.create(picdir)
+require(edgeR)
+@
+
+\begin{document}
+
+\section{Read pre-processing}
+
+\subsection{Interpretation of strand orientation plots}
+
+It is hypothetically possible that these spikes reflect some genuine aspect of chromatin organization.
+For example, the outward-facing spike may be the result of systematic outward looping in chromatin packaging.
+Removal of the spikes would preclude the detection of such features.
+Nonetheless, filtering is still recommended to prevent genuine interactions from being dominated by technical artifacts.
+Indeed, even if there are imbalances in the strand orientations for any one genuine interaction, these skews should balance out when read pairs from all interactions are considered (i.e., assume no systematic bias in the orientation).
+
+On a similar note, there seems to be an increase in same-strand pairs at around the same size as the outward-facing self-ligation artifacts.
+My best guess for this is that it represents some pairing between homologous chromosomes.
+This is because you need DNA molecules running in parallel to each other, which is hard to imagine (other than lots of systematic roller-coaster loops).
+
+\section{Counting reads into bin pairs}
+
+\subsection{Choice of bin size}
+
+Smaller bins also provide some protection against edge effects, when an interaction is not centered within a larger bin. 
+We could provide more protection with sliding mats, but that's computationally expensive and a pain to control the FDR over. 
+In general, you'll avoid counting irrelevant areas if the bins are small enough to fit inside the interaction loci.
+This is motivated by the same arguments for small windows in ChIP-seq, i.e., detect complex events, avoid ambiguity problems when defining boundaries.
+The inevitable cost is reduce power from smaller counts, relative to a perfectly centered and sized counting area (if it existed).
+
+\subsection{Coordinating objects}
+
+On a side note, it's worth checking that the total library sizes are the same for each method if multiple counting functions are used.
+This means that the same read pairs are being used for count extraction.
+For example, this is automatically done by \code{normalizeCNV} to check that the output of \code{squareCounts} and \code{marginCounts} is consistent.
+
+\section{Filtering comments}
+
+\subsection{Biases between bin pairs}
+
+No consideration is given to the presence of biases between bins.
+Differences in sequencability, mappability or number of restriction sites will result in a misrepresentation of the true interaction intensity.
+Full consideration of these region-specific biases requires more complex methods such as iterative correction (see Section~\ref{sec:itercor}).
+However, this seems unnecessary for a rough filter, and obviously the biases won't affect the formal DI testing later.
+
+\subsection{Using the mitochondrial genome}
+
+In theory, you could use the mitochondrial-nuclear interactions to get a cleaner estimate of the non-specific ligation rate.
+Unfortunately, this requires a lot of effort in rescaling because of the differences in size (also copy number), which would preclude accurate estimation.
+
+\subsection{Rescaling by area}
+
+Technically, we should rescale the areas in terms of restriction fragment pairs, because that determines the number of available ends for sequencing.
+This may be more relevant as it accounts for the limits of spatial resolution in a Hi-C experiment. 
+For example, bins of similar size may have different counts if they contain different numbers of fragments.
+Rescaling by the number of fragments ensures that bin pairs with different numbers of restriction sites are comparable.
+However, in practice, this tends to select for the wrong things, e.g., bin pairs involving low-complexity sequences like telomeres and centromeres.
+This is because even though such bin pairs have low counts, they get upscaled by a lot.
+
+\subsection{Trend-based filtering}
+
+Our description is similar to what Lin's paper does.
+They compute the expected counts using a distance function to boost up the value, and then they test for significant differences from the expected value.
+
+\subsection{Saving memory during filtering}
+
+I thought about strategies whereby the filter threshold is computed during count loading.
+However, this is rather inflexible (need to define the nature of the filter beforehand) and outright impossible if you need to fit a global trend. 
+We could save memory by computing average abundances on the spot and only reporting those; but this isn't a long-term solution, as the number of abundances required will depend on the number of non-empty bin pairs. 
+Memory usage will just scale up in the same manner (albeit as a fraction of that of bin pair counts).
+
+\subsection{Choosing direct over peak-based filtering}
+
+I would just do direct filtering, and then consolidate across bin sizes.
+It's less aggressive, I avoid having to cluster my output, and I still get decent resolution if the parents aren't too big.
+Also, peak calling doesn't protect against the boost from an intersection of two well-mapped regions; e.g., 2x + 2x = 4x, whereas the background would only be 1-2x.
+This can lead to spurious peaks that are simply due to mapping biases.
+
+As an aside, no adjustment is done for the effect of distance on abundance for intra-chromosomal pairs.
+This assumes that the distance effect is not a technical bias (similar to the choice between direct and trend-based filtering).
+It is also difficult to fit stable trends for small bin sizes with low counts.
+In general, adjustment is not required to obtain sensible peak calls.
+
+The effect of each approach can also be summarized by examining the distribution of interaction distances after filtering.
+The direct method preferentially retains short-range interactions whereas the trended method selects for long-range interactions.
+
+I guess I prefer the direct method. 
+Even though you get diffuse interactions, it doesn't mean that they're not relevant, i.e., non-specific!=non-functional.
+For example, see Doyle's 2014 paper, and think of broad interactions in TADs. 
+It's like the difference between sharp and diffuse marking in ChIP-seq; as Hi-C pulls down all interactions, you're likely to get both lots.
+
+\section{Normalization comments}
+
+\subsection{When to use scaling normalization}
+
+This may be the least-worst approach when an assumption of a non-DI majority does not apply.
+You'll probably have lots of biases (that are confounded with DIs, so can't be properly removed).
+But at least it's better than normalizing in the wrong direction when you (falsely) assume that a non-DI majority is present.
+
+Some situations include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
+In such cases, it's not clear how to normalize as you can't assume non-DE.
+(In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
+This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
+
+\subsection{Why iterative correction doesn't get rid of sample-specific biases}
+
+Consider two replicates in which have the same genomic biases.
+Assume that the Hi-C protocol was more efficient in the second replicate, such that more weak long-range interactions were captured (at the expense of the strong short-range interactions).
+This is visualized below with plots of the genome-by-genome interaction space for each replicate, where the counts represent the relative intensity of each interaction.
+ 
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{center}
+<<fig=TRUE,echo=FALSE>>=
+plot(0, 0, xlim=c(0, 3), ylim=c(0, 3), xlab="genome", ylab="genome", type="n",axes=FALSE, 
+    cex.lab=2, main="Replicate 1", cex.main=2)
+curmat1 <- rbind(c(3, 0, 0), c(1, 3, 0), c(1, 1, 3))
+keep <- lower.tri(curmat1, diag=TRUE)
+xs <- nrow(curmat1) - row(curmat1)[keep] + 1
+ys <- col(curmat1)[keep]
+my.colors <- rgb(1, 0, 0, c(0.3, 0.6, 0.9))
+rect(xs-1, ys-1, xs, ys, col=my.colors[curmat1[keep]], lty=2)
+text(xs-0.5, ys-0.5, labels=curmat1[keep], cex=2)
+@
+<<fig=TRUE,echo=FALSE>>=
+plot(0, 0, xlim=c(0, 3), ylim=c(0, 3), xlab="genome", ylab="genome", type="n",axes=FALSE, 
+    cex.lab=2, main="Replicate 2", cex.main=2)
+curmat2 <- rbind(c(2, 0, 0), c(2, 2, 0), c(2, 2, 2))
+rect(xs-1, ys-1, xs, ys, col=my.colors[curmat2[keep]], lty=2)
+text(xs-0.5, ys-0.5, labels=curmat2[keep], cex=2)
+@
+\end{center}
+\setkeys{Gin}{width=0.8\textwidth}
+
+Interactions are shown between pairs of genomic intervals, based on the partitioning of each axis by the dotted lines.
+A fold change of 1.5 will be obtained at an average intensity of 2.5 for the diagonal elements, whereas a fold change of 0.5 will be obtained at an average intensity of 1.5 for all other elements.
+This mean-dependent fold change represents a trended bias that can be eliminated with non-linear methods.
+In contrast, the sum of counts for each genomic interval is the same for all intervals in each replicate ($1 + 3 + 1$ for the first and $2 + 2 + 2$ for the second).
+This means that iterative correction will have no effect as it operates on the differences in these sums within a single sample.
+
+Besides failing to remove trended biases, the iterative correction methods run the risk of overfitting.
+There's no doubt that the marginal counts should be equal on average; whether they should be exactly equal is another matter.
+You'll get some variability in counts just due to stochasticity, even if the expected coverage is the same.
+In fact, variability might be substantial, due to correlations between bin pairs and the fact that the count is often dominated by a few local interactions.
+Coercing equality will distort the differences between libraries, resulting in weird dispersion estimates and fold changes.
+I don't think that's useful for routine analyses.
+
+Furthermore, there is no simple way to combine these offsets with those from non-linear normalization.
+Indeed, there is no guarantee that the two offsets do not oppose each other's effects.
+Also, biases cannot be computed for some libraries where they have counts of zero.
+Imputation for missing values is \textit{ad hoc} whereby values are set to the average offset (zero, above).
+
+An alternative approach is to simply identify the bins that have potential copy number changes.
+This can be done by performing a differential analysis on the counts from \code{marginCounts}.
+Any pairs that involve affected bins can be marked to indicate that caution is required during interpretation.
+This strategy avoids the aforementioned problems and may be preferable when only a few bins are affected.
+
+A related single-sample approach deserves special mention. 
+Normalization can be performed on the distances between bins in each pair \cite{ay2014} to correct for the drop in interaction frequency with increasing distance between loci. 
+As the distance is negatively correlated with abundance, normalization to standardize the former between libraries will also reduce differences in counts with respect to the latter. 
+That said, given the choice, it is preferable to model a weak relative trend between libraries rather than a strong absolute trend for each library.
+This is because any errors in fitting will be smaller in the former. 
+Moreover, you'd end up using the distance for normalization in the same way that you're using the abundance. 
+The distance itself has no inherently appealing qualities, it's only its relation to the abundance which is interesting for single-sample analyses. 
+For differential analyses, you can use the abundance directly and skip the middleman.
+
+\subsection{Why use multi-dimensional smoothing?}
+
+As a comparison, consider the use of iterative correction to normalize CNVs.
+This identifies CNVs based on differences in the coverage of each bin between samples.
+However, converting the change in coverage into a quantifiable change in the interaction intensity requires the assumption of factorizability \cite{imakaev2012iterative}, i.e., the effect on intensity is a product of the biases of the interacting regions.
+This is reasonable under a random ligation model, but does not account for other mechanisms of read pair generation.
+\begin{quote}
+For example, wholesale duplication of an entire TAD will double the reported interaction intensity for intra-TAD interactions for that TAD (assuming negligble inter-TAD contacts between the original and the copy).
+This is inconsistent with factorizability, where a 4-fold increase in interaction intensity would be expected after doubling the copy number for all interacting loci inside the TAD.
+\end{quote}
+
+The use of a empirical fit reduces the number of assumptions involved in translating a CNV into its effect on interaction intensities.
+Simultaneous fitting to all covariates means that different biases at any combination of covariate values can be accommodated.
+That said, the use of many covariates may lead to overfitting and removal of genuine differences.
+The function also assumes that CNVs in different parts of the genome have the same effect on the interaction intensities.
+Thus, caution is required when using \code{normalizeCNV}. 
+The safest choice is to avoid it when there is no evidence for CNVs.
+
+Incidentally, separate fitting on each covariate is not guaranteed to get rid of trends with respect to each covariate.
+Imagine the following situation, where there is no trend with respect to covariate A (first panel).
+Organizing on a separate covariate, however, does reveal a trend with respect to B (second panel).
+Normalizing this on B gets rid of the trend (third panel), but re-introduces a trend in A (fourth panel).
+At the very least, some iteration is required, though whether this converges on something sensible (or at all) is unclear.
+A direct multi-dimensional fit is cleaner.
+
+\begin{center}
+<<fig=TRUE,echo=FALSE>>=
+par(mfrow=c(2,2))
+plot(c(1,2,2,3), c(1, 0, 2, 1), col=c("red", "red", "blue", "blue"), 
+    pch=16, ylab="log-FC", xlab="Covariate A", 
+    main="After correcting for trends\nw.r.t. covariate A")
+plot(c(1,1,3,3), c(1, 0, 2, 1), col=c("red", "red", "blue", "blue"), 
+    pch=16, ylab="log-FC", xlab="Covariate B",
+    main="After correcting for trends\nw.r.t. covariate A")
+plot(c(1,1,3,3), c(1.5, 0.5, 1.5, 0.5), col=c("red", "red", "blue", "blue"), 
+    pch=16, ylab="log-FC", xlab="Covariate B",
+    main="After correcting for trends\nw.r.t. covariate B")
+plot(c(1,2,2,3), c(1.5, 0.5, 1.5, 0.5), col=c("red", "red", "blue", "blue"), 
+    pch=16, ylab="log-FC", xlab="Covariate A",
+    main="After correcting for trends\nw.r.t. covariate B")
+@
+\end{center}
+
+In theory, the same logic could be applied to accounting for biases due to changes in protein binding if you coupled Hi-C with ChIP.
+You don't want to detect changes in the number of interactions simply because of changes in the amount of bound protein, e.g., due to random ligation.
+The normalizeCNV function can be applied to eliminate interaction fold-changes that are associated with changes in the coverage of the anchors (i.e., DB).
+The same logic applies for general Hi-C, to protect against spurious interactions due to changes in chromatin accessibility and fragmentation.
+This ensures that you test for differential interactions-per-binding event.
+I'm not sure you need always it for Capture-C, because the amount of genome should be the same between conditions.
+Besides, capture happens after ligation, so any capture-specific biases can be absorbed into the interaction biases (and should cancel out in a DI analysis).
+
+\section{FDR control comments}
+
+\subsection{Consolidating from different bin sizes}
+
+In other cases, decreased power may be observed if either - but not both- sharp or diffuse interactions are observed.
+This is because the effective number of tests increases, along with the severity of the correction.
+
+\subsection{Visualization of differential interactions}
+
+There's a bit of a checkerboard DI pattern here, albeit weak with low log-fold changes.
+This represents some sort of global change in inter-compartment contacts, which (in the context of ID'ing specific changes) may not be uninteresting.
+In generally, these changes aren't too concerning, as the log-FCs aren't huge and the majority are not significant.
+The pattern of the changes probably looks worse than it is due to correlations across the interaction space.
+If it were a problem, though, non-linear normalization wouldn't help, because the different compartments don't separate by abundance.
+The slight decrease in inter-compartment interactions is overshadowed by the distance effect.
+If you want to get rid of it, you'll have to explicitly identify compartments and normalize them directly.
+This is a pain, though we could do it by converting the \code{InteractionSet} to a full matrix, and running PCA on the matrix for each chromosome.
+
+
+
+

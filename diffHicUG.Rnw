@@ -359,12 +359,6 @@ legend("topright", c("inward", "outward", "same"),
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-% It is hypothetically possible that these spikes reflect some genuine aspect of chromatin organization.
-% For example, the outward-facing spike may be the result of systematic outward looping in chromatin packaging.
-% Removal of the spikes would preclude the detection of such features.
-% Nonetheless, filtering is still recommended to prevent genuine interactions from being dominated by technical artifacts.
-% Indeed, even if there are imbalances in the strand orientations for any one genuine interaction, these skews should balance out when read pairs from all interactions are considered (i.e., assume no systematic bias in the orientation).
-
 As an aside, the position of the spikes in the above plots can be used to estimate some fragment lengths.
 The $x$-coordinate of the outward-facing spike represents the length of the DNA fragments after restriction digestion.
 This is useful as it provides a lower bound on the spatial resolution of any given Hi-C experiment.
@@ -534,12 +528,6 @@ This provides some robustness to the choice of bin size.
 Sharp interactions can be detected by pairs of smaller bins while diffuse interactions can be detected by larger bin pairs.
 See Section~\ref{sec:mergebins} for more information on consolidating results from multiple bin sizes.
 
-% Smaller bins also provide some protection against edge effects, when an interaction is not centered within a larger bin. 
-% We could provide more protection with sliding mats, but that's computationally expensive and a pain to control the FDR over. 
-% In general, you'll avoid counting irrelevant areas if the bins are small enough to fit inside the interaction loci.
-% This is motivated by the same arguments for small windows in ChIP-seq, i.e., detect complex events, avoid ambiguity problems when defining boundaries.
-% The inevitable cost is reduce power from smaller counts, relative to a perfectly centered and sized counting area (if it existed).
-
 \section{Counting with pre-defined regions}
 
 \subsection{Connecting counts between pairs of regions}
@@ -640,16 +628,6 @@ smoothScatter(0.5*(adjc[,1]+adjc[,3]), adjc[,1]-adjc[,3],
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-% It must be stressed that the marginal count refers to a count for each bin. 
-% To avoid any confusion, the count for each \textit{bin pair} will be described as the interaction count.
-% Later, it may be necessary to adjust the interaction count based on the marginal counts for the corresponding bins (Section~\ref{sec:copy}, for example).
-% In such cases, one should ensure that the same values of \code{width} and \code{param} are used in both \code{squareCounts} and \code{marginCounts}.
-% One can check that this is the case by ensuring that the regions are the same.
-% 
-% <<>>=
-% identical(regions(data), regions(margin.data))
-% @
-
 \section{Additional parameter options}
 
 \subsection{Restricting the input chromosomes}
@@ -718,9 +696,6 @@ For simplicity, all counting steps will be performed here with the default setti
 However, users are encouraged to use non-default values if it can improve the outcome of their analyses.
 Non-default values should be recorded in a single \code{pairParam} object for consistent use across all functions in the \pkgname{} pipeline.
 This ensures that the same read pairs will always be extracted from each index file.
-
-% On a side note, it's worth checking that the total library sizes are the same for each method if multiple counting functions are used.
-% This means that the same read pairs are being used for count extraction.
 
 \chapter{Filtering out uninteresting interactions}
 \label{chap:filter}
@@ -809,13 +784,6 @@ In practice, the direct filter can be combined with \code{count.keep} to ensure 
 direct.keep2 <- direct.keep & count.keep
 @
 
-% No consideration is given to the presence of biases between bins.
-% Differences in sequencability, mappability or number of restriction sites will result in a misrepresentation of the true interaction intensity.
-% Full consideration of these region-specific biases requires more complex methods such as iterative correction (see Section~\ref{sec:itercor}).
-% 
-% Also, in theory, you could use the mitochondrial-nuclear interactions to get a cleaner estimate of the non-specific ligation rate.
-% Unfortunately, this requires a lot of effort in rescaling because of the differences in size (also copy number) which would preclude accuracy estimation.
-
 \subsection{Computing the threshold from larger bin pairs}
 The procedure above assumes that no additional filtering has been performed during count loading with \code{squareCounts}, i.e., \code{filter} is set to unity.
 Any pre-filtering that removes low-abundance bin pairs will inflate the median and lead to overestimation of the filter threshold. 
@@ -838,10 +806,6 @@ Counts for the 1 Mbp bin pairs are supplied as the \code{reference} parameter an
 This threshold is adjusted for differences in size between the smaller and larger bins.
 The final value can then be used to directly filter on the abundances of the smaller bin pairs.
 Here, a minimum 5-fold change over the threshold is required for the retention of each 100 Mbp bin pair.
-
-% Technically, we should do it in terms of restriction fragment pairs.
-% However, this makes it difficult to choose an appropriate prior count, as a value of 2 is way to big for a single restriction fragment.
-% Adjustment by the area in terms of restriction fragments will also tend to select for the wrong things, e.g., bin pairs involving low-complexity sequences like telomeres and centromeres.
 
 <<>>=
 direct <- filterDirect(smaller.data, reference=data)
@@ -895,10 +859,6 @@ trend.keep <- trended$abundances > trended$threshold
 summary(trend.keep)
 @
 
-% This is what they effectively do in Lin's paper. They compute the expected
-% counts using a distance function to boost up the value, and then they test
-% for significant differences from the expected value.
-
 Of course, the threshold can also be defined at some minimum fold change above the fitted value.
 This effectively increases the stringency of the filter.
 The example below retains bin pairs with abundances that are two-fold higher than the expected compaction intensity.
@@ -935,13 +895,6 @@ summary(trended$abundances > trended$threshold)
 Another advantage of this approach is that threshold estimation is more precise with larger counts.
 Thus, even if there is enough memory for loading smaller bin pairs with \code{filter=1}, larger bin sizes may still be preferred for computing the filter threshold.
 Otherwise, median calculation or trend fitting will be confounded by discreteness at low counts.
-
-% I thought about strategies whereby the filter threshold is computed during count loading.
-% However, this is rather inflexible (need to define the nature of the filter beforehand)
-% and outright impossible if you need to fit a global trend. We could save memory by computing 
-% average abundances on the spot and only reporting those; but this isn't a long-term solution, 
-% as the number of abundances required will depend on the number of non-empty bin pairs. Memory
-% usage will just scale up in the same manner (albeit as a fraction of that of bin pair counts).
 
 \section{Peak-calling in the interaction space}
 
@@ -1035,11 +988,6 @@ This may not be appropriate for every study.
 Indeed, the definition of ``broad'' depends on the bin size, whereby a peak called at large bin sizes may be discarded at smaller sizes.
 Users should try out the other general filters before proceeding to peak calling, to check that potentially interesting differences are not discarded by the latter.
 
-% I would just do direct filtering, and then consolidate across bin sizes.
-% It's less aggressive, I avoid having to cluster my output, and I still get decent resolution if the parents aren't too big.
-% Also, peak calling doesn't protect against the boost from an intersection of two well-mapped regions; e.g., 2x + 2x = 4x, whereas the background would only be 1-2x.
-% This can lead to spurious peaks that are simply due to mapping biases.
-
 \subsection{Efficient peak calling at high resolution}
 The \code{enrichedPairs} function requires that all bin pairs are loaded into memory, i.e., with \code{filter=1} during \code{squareCounts}.
 This may not be feasible for high resolution analyses with small bin sizes, where there is a large number of bin pairs with low counts.
@@ -1055,19 +1003,6 @@ en.data
 head(mcols(en.data)$enrichment)
 @
 
-% As an aside, no adjustment is done for the effect of distance on abundance for intra-chromosomal pairs.
-% This assumes that the distance effect is uninteresting bias, which may not be the case.
-% It is also difficult to fit stable trends for small bin sizes with low counts.
-% Nonetheless, distance-adjusted abundances can be obtained by subtracting the fitted values from the abundances in the output of \code{filterTrended}, and supplying them to \code{enrichedPairs} through the \code{abundances} argument.
-% Stable trends can be obtained by using larger bins (see Section~\ref{sec:filtersmall}).
-% In general, adjustment is not required to obtain sensible peak calls.
-% 
-% <<eval=FALSE,echo=TRUE>>=
-% trended <- filterTrended(chr1.data, prior.count=0)
-% adj.ab <- trended$abundances - trended$threshold
-% summary(enrichedPairs(chr1.data, abundances=adj.ab))
-% @
-
 \section{Filtering for pre-specified regions}
 Filtering for pairs of arbitrary regions is complicated by the potential irregularity of the regions.
 In particular, there is no guarantee that the supplied regions will cover the entirety of the interaction space.
@@ -1082,42 +1017,9 @@ The position of this guide is that it would be inappropriate to penalize larger 
 As long as there are sufficient counts for an analysis, the size of the area involved should be irrelevant.
 Thus, use of \code{aveLogCPM} alone is recommended for calculation of the average abundance when filtering region pairs.
 
-% Same argument for bin pairs.
-
 <<>>=
 summary(aveLogCPM(asDGEList(redata)))
 @
-
-%Nonetheless, other users may wish to adjust for the differences in areas.
-%In such cases, \code{scaledAverage} can be used to compute the filter statistic in conjunction with \code{getAreas}.
-%Computed areas are mean-adjusted and used to scale the average abundances for each region pair.
-%Note that this differs from the application of \code{scaledAverage} in Section~\ref{sec:filtersmall}.
-%There, the scaling factor is constant and does not alter the relative abundances within each set of bin pairs (i.e., of the same size).
-%Here, each region pair has a different area such that its abundance will be subject to different scaling.
-%
-%<<>>=
-%area <- getArea(redata, bp=TRUE)
-%area <- area/mean(area)
-%summary(scaledAverage(asDGEList(redata), scale=area))
-%@
-%
-%On a similar note, another approach defines the area for each region/bin pair based on the number of restriction fragment pairs.
-%This may be more relevant as it accounts for the limits of spatial resolution in a Hi-C experiment. 
-%For example, bins of similar size may have different counts if they contain different numbers of fragments.
-%In practice, fragment-based area adjustment prior to filtering is not recommended.
-%This is because it tends to select for uninteresting bins with very few fragments, e.g., telomeres, centromeres.
-%
-%<<label=nfragplot,eval=FALSE>>=
-%hist(getArea(data, bp=FALSE), breaks=100, xlab="Restriction fragment pairs per bin pair")
-%@
-%
-%\setkeys{Gin}{width=0.5\textwidth}
-%\begin{center}
-%<<echo=FALSE,fig=TRUE>>=
-%<<nfragplot>>
-%@
-%\end{center}
-%\setkeys{Gin}{width=0.8\textwidth}
 
 \section{Filtering out diagonal elements}
 Incomplete removal of artifacts (e.g., dangling ends, self-circles) will generally manifest as increased counts for diagonal bin pairs, i.e., pairs of the same bin.
@@ -1143,25 +1045,6 @@ This can be driven by the biological knowledge available to the user, based on f
 Even when such knowledge is unavailable, the filters are still useful as they can guide the user towards a sensible interpretation of the filter threshold.
 This would not be possible if the threshold value was chosen arbitrarily.
 
-% The effect of each approach can also be summarized by examining the distribution of interaction distances after filtering.
-% 
-% <<eval=FALSE,label=filterdist>>=
-% mod.dist <- dist/1e6
-% all.breaks <- hist(mod.dist, plot=FALSE)$breaks
-% hist(mod.dist[direct.keep], breaks=all.breaks, col=rgb(0,0,1,0.3))
-% hist(mod.dist[trend.keep], breaks=all.breaks, col=rgb(1,0,0,0.3), add=TRUE)
-% @
-% 
-% \setkeys{Gin}{width=0.5\textwidth}
-% \begin{center}
-% <<echo=FALSE,fig=TRUE>>=
-% <<filterdist>>
-% @
-% \end{center}
-% \setkeys{Gin}{width=0.8\textwidth}
-% 
-% As expected, the direct method preferentially retains short-range interactions whereas the trended method selects for long-range interactions.
-
 The choice of filtering method depends on the features that are most likely to be of interest in each analysis.
 In general, less aggressive filtering should be performed if these features are not well defined.
 Here, a tentative recommendation is provided for direct filtering as it is reasonable to discard non-specific ligation events.
@@ -1181,12 +1064,6 @@ Direct filtering is also performed for the smaller bin pairs, and the results st
 smaller.data <- smaller.data[small.keep,]
 @
 
-% I guess I prefer the direct method. Even though you get diffuse interactions, 
-% it doesn't mean that they're not relevant, i.e., non-specific!=non-functional.
-% For example, see Doyle's 2014 paper, and think of broad interactions in TADs.
-% It's like the difference between sharp and diffuse marking in ChIP-seq; as 
-% Hi-C pulls down all interactions, you're likely to get 
-
 \chapter{Normalization strategies for Hi-C data}
 
 \begin{combox}
@@ -1202,10 +1079,6 @@ The simplest approach is to use scaling methods such as library size normalizati
 This accounts for differences in library preparation efficiency and sequencing depth between samples.
 In \edgeR{}, scaling is performed using the effective library size, defined as the product of the library size and the normalization factor for each sample (see the \edgeR{} user's guide).
 Library size normalization is thus achieved by setting all normalization factors to unity.
-
-% This may be the least-worst approach when an assumption of a non-DI majority does not apply.
-% You'll probably have lots of biases (that are confounded with DIs, so can't be properly removed).
-% But at least it's better than normalizing in the wrong direction when you (falsely) assume that a non-DI majority is present.
 
 <<>>=
 libsize.facs <- rep(1, ncol(data))
@@ -1320,11 +1193,6 @@ If this assumption does not hold, genuine differences may be lost upon normaliza
 For example, a global increase in the compaction of the genome would manifest as an upward trend in the MA plot, as low-abundance distal interactions are weakened in favor of high-abundance short-range interactions.
 In such cases, the simpler scaling strategy described in Section~\ref{sec:simplenorm} may be more appropriate.
 
-% Some exceptions include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
-% In such cases, it's not clear how to normalize as you can't assume non-DE.
-% (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
-% This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
-
 Finally, the offsets can be stored in the \code{InteractionSet} object as an additional matrix in \code{assays}.
 This synchronises operations like subsetting on both the counts and offsets.
 
@@ -1378,62 +1246,6 @@ For example, two replicates could have the same genomic biases but a different d
 The latter would result in a trended bias, but iterative correction would have no effect due to the identical genomic biases.
 In short, normalization within a library is a different problem from normalization between libraries.
 
-% For example, consider two replicates in which ve the same genomic biases.
-% Assume that the Hi-C protocol was more efficient in the second replicate, such that more weak long-range interactions were captured (at the expense of the strong short-range interactions).
-% This is visualized below with plots of the genome-by-genome interaction space for each replicate, where the counts represent the relative intensity of each interaction.
-% 
-% \setkeys{Gin}{width=0.49\textwidth}
-% \begin{center}
-% <<fig=TRUE,echo=FALSE>>=
-% plot(0, 0, xlim=c(0, 3), ylim=c(0, 3), xlab="genome", ylab="genome", type="n",axes=FALSE, 
-%     cex.lab=2, main="Replicate 1", cex.main=2)
-% curmat1 <- rbind(c(3, 0, 0), c(1, 3, 0), c(1, 1, 3))
-% keep <- lower.tri(curmat1, diag=TRUE)
-% xs <- nrow(curmat1) - row(curmat1)[keep] + 1
-% ys <- col(curmat1)[keep]
-% my.colors <- rgb(1, 0, 0, c(0.3, 0.6, 0.9))
-% rect(xs-1, ys-1, xs, ys, col=my.colors[curmat1[keep]], lty=2)
-% text(xs-0.5, ys-0.5, labels=curmat1[keep], cex=2)
-% @
-% <<fig=TRUE,echo=FALSE>>=
-% plot(0, 0, xlim=c(0, 3), ylim=c(0, 3), xlab="genome", ylab="genome", type="n",axes=FALSE, 
-%     cex.lab=2, main="Replicate 2", cex.main=2)
-% curmat2 <- rbind(c(2, 0, 0), c(2, 2, 0), c(2, 2, 2))
-% rect(xs-1, ys-1, xs, ys, col=my.colors[curmat2[keep]], lty=2)
-% text(xs-0.5, ys-0.5, labels=curmat2[keep], cex=2)
-% @
-% \end{center}
-% \setkeys{Gin}{width=0.8\textwidth}
-% 
-% Interactions are shown between pairs of genomic intervals, based on the partitioning of each axis by the dotted lines.
-% A fold change of 1.5 will be obtained at an average intensity of 2.5 for the diagonal elements, whereas a fold change of 0.5 will be obtained at an average intensity of 1.5 for all other elements.
-% This mean-dependent fold change represents a trended bias that can be eliminated with non-linear methods.
-% In contrast, the sum of counts for each genomic interval is the same for all intervals in each replicate ($1 + 3 + 1$ for the first and $2 + 2 + 2$ for the second).
-% This means that iterative correction will have no effect as it operates on the differences in these sums within a single sample.
-%
-% Besides failing to remove trended biases, the iterative correction methods run the risk of overfitting.
-% There's no doubt that the marginal counts should be equal on average; whether they should be exactly equal is another matter.
-% You'll get some variability in counts just due to stochasticity, even if the expected coverage is the same.
-% In fact, variability might be substantial, due to correlations between bin pairs and the fact that the count is often dominated by a few local interactions.
-% Coercing equality will distort the differences between libraries, resulting in weird dispersion estimates and fold changes.
-% I don't think that's useful for routine analyses.
-
-
-% A related single-sample approach deserves special mention. Normalization can
-% be performed on the distances between bins in each pair \cite{ay2014} to
-% correct for the drop in interaction frequency with increasing distance between
-% loci. As the distance is negatively correlated with abundance, normalization
-% to standardize the former between libraries will also reduce differences in 
-% counts with respect to the latter. 
-%     That said, given the choice, it is preferable to model a weak relative 
-% trend between libraries rather than a strong absolute trend for each library.
-% This is because any errors in fitting will be smaller in the former. Moreover,
-% you'd end up using the distance for normalization in the same way that you're
-% using the abundance.  The distance itself has no inherently appealing
-% qualities, it's only its relation to the abundance which is interesting for
-% single-sample analyses. For differential analyses, why go second-best? You can
-% use the abundance directly and skip the middleman.
-
 \section{Accounting for copy number variations}
 \label{sec:copy}
 
@@ -1464,31 +1276,6 @@ Specifically, GLM offsets are returned and can be supplied to the statistical an
 As with trended biases, filtering by average abundance is strongly recommended prior to running \code{normalizeCNV}.
 This reduces the computational work required for multi-dimensional smoothing.
 Discreteness and domination of the fit by low-abundance bin pairs is also avoided.
-
-%\subsection{Why use multi-dimensional smoothing?}
-%As a comparison, consider the use of iterative correction to normalize CNVs.
-%This identifies CNVs based on differences in the coverage of each bin between samples.
-%However, converting the change in coverage into a quantifiable change in the interaction intensity requires the assumption of factorizability \citep{imakaev2012iterative}, i.e., the effect on intensity is a product of the biases of the interacting regions.
-%This is reasonable under a random ligation model, but does not account for other mechanisms of read pair generation.
-%\begin{quote}
-%For example, wholesale duplication of an entire TAD will double the reported interaction intensity for intra-TAD interactions for that TAD (assuming negligble inter-TAD contacts between the original and the copy).
-%This is inconsistent with factorizability, where a 4-fold increase in interaction intensity would be expected after doubling the copy number for all interacting loci inside the TAD.
-%\end{quote}
-%
-%The use of a empirical fit reduces the number of assumptions involved in translating a CNV into its effect on interaction intensities.
-%Simultaneous fitting to all covariates means that different biases at any combination of covariate values can be accommodated.
-%That said, the use of many covariates may lead to overfitting and removal of genuine differences.
-%The function also assumes that CNVs in different parts of the genome have the same effect on the interaction intensities.
-%Thus, caution is required when using \code{normalizeCNV}. 
-%The safest choice is to avoid it when there is no evidence for CNVs (see the plot in Section~\ref{sec:marginal}).
-%
-% In theory, the same logic could be applied to accounting for biases due to changes in protein binding if you coupled Hi-C with ChIP.
-% You don't want to detect changes in the number of interactions simply because of changes in the amount of bound protein, e.g., due to random ligation.
-% The normalizeCNV function can be applied to eliminate interaction fold-changes that are associated with changes in the coverage of the anchors (i.e., DB).
-% The same logic applies for general Hi-C, to protect against spurious interactions due to changes in chromatin accessibility and fragmentation.
-% This ensures that you test for differential interactions-per-binding event.
-% I'm not sure you need always it for Capture-C, because the amount of genome should be the same between conditions.
-% Besides, capture happens after ligation, so any capture-specific biases can be absorbed into the interaction biases (and should cancel out in a DI analysis).
 
 \subsection{Visualizing the effect of CNV removal}
 To demonstrate, the \citeauthor{rickman2012oncogene} dataset is used here as it contains more CNVs.
@@ -1535,59 +1322,6 @@ smoothScatter(margin.lr, after[,1]-after[,2], ylim=c(-4, 4), main="After",
 @
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
-
-% Biases computed by iterative correction represent the divisors that were used to convert the counts into contact probabilities.
-% As such, they can be log-transformed and used as GLM offsets.
-% The aim is to use the biases to account for changes in copy number within each bin.
-% Spurious differences and inflated variances can then be avoided during the statistical analysis.
-% 
-% Calculation of library-specific offsets from the biases can be performed with the output of \code{correctedContact}.
-% This requires setting \code{average=FALSE} such that iterative correction is performed separately for each library.
-% Any missing biases for low abundance bins are set to 0, i.e., the mean offset for each bin pair.
-% This ensures that further processing can be performed in the absence of information for these bins.
-% 
-% <<>>=
-% corrected <- correctedContact(original, average=FALSE)
-% log.bias <- log(corrected$bias)
-% log.bias <- log.bias - rowMeans(log.bias, na.rm=TRUE)
-% log.bias[is.na(log.bias)] <- 0
-% cnv.off <- log.bias[data@anchor.id,,drop=FALSE] + log.bias[data@target.id,,drop=FALSE]
-% head(cnv.off)
-% @
-% 
-% It must be stressed that there are several obvious limitations with this approach. 
-% In particular:
-% \begin{itemize}
-% \item Changes in copy number are assumed to have a multiplicative effect on interaction intensity.
-% This may not be the case, e.g., a change in copy number may be handled by negative feedback mechanisms such that no change occurs in the interaction intensity.
-% \item The correction procedure is usually dominated by contributions from short-range interactions.
-% Any stochastic changes in the intensity of these interactions will have an inappropriately large effect on the results for all bin pairs.
-% \item There is no simple way to combine these offsets with those from non-linear normalization.
-% Indeed, there is no guarantee that the two offsets do not oppose each other's effects.
-% \item Some biases cannot be computed for some libraries where they have counts of zero.
-% Imputation for missing values is \textit{ad hoc} whereby values are set to the average offset (zero, above).
-% \end{itemize}
-% An alternative approach is to simply identify the bins that have potential copy number changes.
-% This can be done by performing a differential analysis on the counts from \code{marginCounts}.
-% Any pairs that involve affected bins can be marked to indicate that caution is required during interpretation.
-% This strategy avoids the aforementioned problems and may be preferable when only a few bins are affected.
-% 
-% % You might be wondering why we just don't divide it through by the coverage 
-% % of each bin. However, this is not a good idea. Check out the example below,
-% % where a matrix of 1's has been multiplied by a true bias. You need a couple
-% % of iterations to recover the true bias, even under true factorizability.
-% 
-% <<eval=FALSE,echo=FALSE>>=
-% true.bias <- c(1.5, 2, 1)
-% blah <- t(true.bias * t(matrix(1, 3, 3) * true.bias))
-% combined <- 1L
-% for (it in 1:25) {
-%   collected <- sqrt(rowSums(blah))
-%   blah <- t(t(blah/collected)/collected)
-%   combined <- combined*collected
-%   print(combined/min(combined))
-% }
-% @
 
 \subsection{Using alternative copy number definitions}
 The method above uses the marginal counts as a proxy for genomic coverage \cite{imakaev2012iterative}.
@@ -1979,9 +1713,6 @@ head(cons)
 sum(cons$FDR <= 0.05)
 @
 
-% In other cases, decreased power may be observed if either - but not both- sharp or diffuse interactions are observed.
-% This is because the effective number of tests increases, along with the severity of the correction.
-
 Here, the number of detections is greater than that found with large bins alone.
 This suggests that the different bin sizes complement each other by detecting features at different resolutions.
 Statistics for each of the larger bin pairs can then be stored to file. 
@@ -2238,15 +1969,6 @@ White and near-white regions correspond to those with log-fold change close to z
 Grey regions mark the parts of the space where no bin pairs are present in \code{data}, possibly due to filtering on abundance.
 As a result, this approach tends to be less useful when high-abundance bin pairs are more sparsely distributed, e.g., for long-range interactions.
 A rotated DI plot can be similarly constructed using the \code{rotDI} function.
-
-% There's a bit of a checkerboard DI pattern here, albeit weak with low log-fold changes.
-% This represents some sort of global change in inter-compartment contacts, which (in the context of ID'ing specific changes) may not be uninteresting.
-% In generally, these changes aren't too concerning, as the log-FCs aren't huge and the majority are not significant.
-% The pattern of the changes probably looks worse than it is due to correlations across the interaction space.
-% If it were a problem, though, non-linear normalization wouldn't help, because the different compartments don't separate by abundance.
-% The slight decrease in inter-compartment interactions is overshadowed by the distance effect.
-% If you want to get rid of it, you'll have to explicitly identify compartments and normalize them directly.
-% This is a pain, though we could do it by converting the InteractionSet to a full matrix, and running PCA on the matrix for each chromosome.
 
 Both \code{rotDI} and \code{plotDI} will invisibly return another function that maps log-fold changes to colors.
 This can be used to generate a custom color bar, as shown below.

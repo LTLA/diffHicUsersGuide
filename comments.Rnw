@@ -96,6 +96,9 @@ This is because even though such bin pairs have low counts, they get upscaled by
 Our description is similar to what Lin's paper does.
 They compute the expected counts using a distance function to boost up the value, and then they test for significant differences from the expected value.
 
+More generally, the effect of each filter strategy can be summarized by examining the distribution of interaction distances after filtering.
+The direct method preferentially retains short-range interactions whereas the trended method selects for long-range interactions.
+
 \subsection{Saving memory during filtering}
 
 I thought about strategies whereby the filter threshold is computed during count loading.
@@ -103,25 +106,33 @@ However, this is rather inflexible (need to define the nature of the filter befo
 We could save memory by computing average abundances on the spot and only reporting those; but this isn't a long-term solution, as the number of abundances required will depend on the number of non-empty bin pairs. 
 Memory usage will just scale up in the same manner (albeit as a fraction of that of bin pair counts).
 
-\subsection{Choosing direct over peak-based filtering}
+\subsection{Choosing direct filters over the others}
 
 I would just do direct filtering, and then consolidate across bin sizes.
 It's less aggressive, I avoid having to cluster my output, and I still get decent resolution if the parents aren't too big.
-Also, peak calling doesn't protect against the boost from an intersection of two well-mapped regions; e.g., 2x + 2x = 4x, whereas the background would only be 1-2x.
-This can lead to spurious peaks that are simply due to mapping biases.
+Even though you get diffuse interactions, it doesn't mean that they're not relevant, i.e., non-specific!=non-functional.
+For example, see Doyle's 2014 paper, and think of broad interactions in TADs. 
+It's like the difference between sharp and diffuse marking in ChIP-seq; as Hi-C pulls down all interactions, you're likely to get both lots.
+
+\subsection{Deficiencies of peak-based filters}
+
+Peak calling doesn't protect against the potential multiplicative boost from an intersection of two regions with above-average bias/coverage.
+If two regions have twice as much coverage, an interaction between them would get a 4-fold increase in intensity under a random ligation model.
+However, the estimated background would only be 1-2-fold increased above the baseline, failing to offset the increase in interaction intensity.
+This can lead to spurious peaks that are simply due to coverage/mapping biases.
+
+The original peak-calling strategy uses a Poisson-based test of the observed count above the expected value (computed from the neighbourhood).
+This won't account for biological variability.
+The neighbourhood will also be spatially correlated to the count, which would lead to some loss of power at best; or, at worst, violate independence assumptions of filtering.
+In particular, some filtering is necessary to remove the vast number of tests with no/low expected counts (this is equivalent to the lambda-chunking in Rao's paper).
+However, you'll be more likely to retain tests around putative peaks because of bleed-over from the peak to the neighbourhood.
+This could lead to loss of error control.
 
 As an aside, no adjustment is done for the effect of distance on abundance for intra-chromosomal pairs.
 This assumes that the distance effect is not a technical bias (similar to the choice between direct and trend-based filtering).
 It is also difficult to fit stable trends for small bin sizes with low counts.
 In general, adjustment is not required to obtain sensible peak calls.
 
-The effect of each approach can also be summarized by examining the distribution of interaction distances after filtering.
-The direct method preferentially retains short-range interactions whereas the trended method selects for long-range interactions.
-
-I guess I prefer the direct method. 
-Even though you get diffuse interactions, it doesn't mean that they're not relevant, i.e., non-specific!=non-functional.
-For example, see Doyle's 2014 paper, and think of broad interactions in TADs. 
-It's like the difference between sharp and diffuse marking in ChIP-seq; as Hi-C pulls down all interactions, you're likely to get both lots.
 
 \section{Normalization comments}
 

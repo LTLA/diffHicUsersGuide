@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 18 November 2016}
+Last revised 11 December 2016}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -145,8 +145,8 @@ data <- data[keep,]
 @
 \item normalizing counts between libraries
 <<>>=
+data <- normalize(data, type="loess")
 y <- asDGEList(data)
-y$offset <- normOffsets(data, type="loess")
 @
 \item modelling biological variability
 <<>>=
@@ -1104,6 +1104,8 @@ In practice, scaling methods are usually too simplistic.
 More sophisticated approaches are necessary to handle the complex biases observed in real Hi-C data.
 
 \section{Removing trended biases between libraries}
+
+\subsection{Using non-linear normalization}
 Trended biases can be generated from uncontrolled differences in library preparation. 
 This is particularly problematic for Hi-C data, given the complexity of the protocol. 
 Changes in cross-linking efficiency or ligation specificity can lead to a systematic redistribution of read pairs throughout the interaction space. 
@@ -1182,22 +1184,33 @@ adj.counts <- log2(assay(data) + 0.5) - nb.off/log(2)
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-Filtering on average abundance prior to this normalization step is strongly recommended.
-This removes low counts and avoids problems with discreteness.
+\subsection{Requirements of non-linear normalization}
+Filtering on average abundance prior to normalization is strongly recommended.
+This removes low counts and avoids problems with discreteness during trend fitting.
 Filtering also improves the sensitivity of span-based fitting algorithms like LOESS at higher abundances.
 Otherwise, the fitted trend will be dominated by the majority of low-abundance bin pairs.
 
-Of course, the non-linear strategy assumes that most bin pairs at each abundance do not represent differential interactions.
+Non-linear normalization also assumes that the majority of bin pairs at each abundance do not represent differential interactions.
 Any systematic differences between libraries are assumed to be technical in origin and are removed.
 If this assumption does not hold, genuine differences may be lost upon normalization.
 For example, a global increase in the compaction of the genome would manifest as an upward trend in the MA plot, as low-abundance distal interactions are weakened in favor of high-abundance short-range interactions.
-In such cases, the simpler scaling strategy described in Section~\ref{sec:simplenorm} may be more appropriate.
+In such cases, the simpler scaling strategies described in Section~\ref{sec:simplenorm} may be more appropriate.
 
-Finally, the offsets can be stored in the \code{InteractionSet} object as an additional matrix in \code{assays}.
+\subsection{Storing the offset matrix}
+Offsets can be stored in the \code{InteractionSet} object as an additional matrix in the \code{assays} slot.
 This synchronises operations like subsetting on both the counts and offsets.
 
 <<>>=
-assays(data)$offset <- nb.off
+assay(data, "offset") <- nb.off
+data
+@
+
+Alternatively, the \code{normalize} function can be used with \code{type="loess"}.
+This computes the offset matrix via non-linear normalization and stores the result in the returned object.
+Thus, it provides a convenient wrapper to the \code{normOffsets} and \code{assays<-} commands. 
+
+<<>>=
+data <- normalize(data, type="loess")
 @
 
 \section{Iterative correction of interaction intensities}
@@ -1367,15 +1380,15 @@ Obviously, more complex designs can be used if necessary.
 This includes designs with blocking factors for batch effects, pairing between samples or multiple groups.
 
 The \code{InteractionSet} object is also converted into a \code{DGEList} object for analysis with \edgeR{}.
-To include the normalization offsets that were previously computed with the NB-loess method, the offset matrix is assigned to \code{y\$offset}.
-However, if normalization factors were computed instead, these can be incorporated via the \code{norm.factors} argument in \code{asDGEList}.
+The \code{scaleOffset} function is used to store the normalization offsets that were previously computed with the NB-loess method. 
+Alternatively, if scaling normalization was performed, the normalization factors can be incorporated via the \code{norm.factors} argument in \code{asDGEList}.
 Note that the offset matrix will take precedence over scaling factors in \edgeR{} analyses.
 (If either the normalization factors or offsets are already stored in certain fields of \code{data}, as previously described, then they will be automatically extracted and used by \code{asDGEList}.
-Manual setting of \code{y\$offset} is shown below only for demonstration purposes.)
+The manual use of \code{scaleOffset} below is shown only for demonstration purposes.)
 
 <<>>=
 y <- asDGEList(data)
-y$offset <- nb.off
+y <- scaleOffset(y, nb.off)
 @
 
 \section{Estimating the NB dispersion}
@@ -1574,8 +1587,8 @@ This may be satisfactory when the interaction space is sparse such that the clus
 To demonstrate, a quick-and-dirty differential analysis is performed using counts for the 100 kbp bin pairs.
 
 <<>>=
+smaller.data <- normalize(smaller.data, type="loess")
 y.small <- asDGEList(smaller.data)
-y.small$offset <- normOffsets(smaller.data, type="loess")
 y.small <- estimateDisp(y.small, design)
 fit.small <- glmQLFit(y.small, design, robust=TRUE)
 result.small <- glmQLFTest(fit.small)

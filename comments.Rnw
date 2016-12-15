@@ -62,6 +62,18 @@ In general, you'll avoid counting irrelevant areas if the bins are small enough 
 This is motivated by the same arguments for small windows in ChIP-seq, i.e., detect complex events, avoid ambiguity problems when defining boundaries.
 The inevitable cost is reduce power from smaller counts, relative to a perfectly centered and sized counting area (if it existed).
 
+As described, it's unlikely that there's a single optimal bin size that will handle all features.
+This motivates the use of multiple bin sizes and combining of the results.
+However, this strategy is a hassle if you need to use the bin pairs for further processing, which becomes complicated if you have many different sizes.
+Instead, if you have enough reads, you can just stick with smaller bin sizes and rely on the depth to offset the reduction in counts.
+In contrast, you can't easily overcome the loss of spatial resolution when using larger bin sizes.
+
+Generally, I do a DI analysis with only a single bin size and see if the results are satisfactory.
+This evaluation is a balance between whether I get enough DIs and whether the results are interpretable.
+The former generally (but not always) improves with more counts for larger bins, while the latter is better for smaller bins as you can assign genomic features to anchor regions.
+It seems like 50 kbp is a good place to start for \textit{in situ} data sets -- large enough to get many read counts, but small enough to identify possible interacting genes.
+Many bin pairs also get clustered into much larger aggregates, so for these events at least, there's not much benefit to using smaller bins.
+
 \subsection{Coordinating objects}
 
 On a side note, it's worth checking that the total library sizes are the same for each method if multiple counting functions are used.

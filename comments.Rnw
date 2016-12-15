@@ -72,7 +72,8 @@ Generally, I do a DI analysis with only a single bin size and see if the results
 This evaluation is a balance between whether I get enough DIs and whether the results are interpretable.
 The former generally (but not always) improves with more counts for larger bins, while the latter is better for smaller bins as you can assign genomic features to anchor regions.
 It seems like 50 kbp is a good place to start for \textit{in situ} data sets -- large enough to get many read counts, but small enough to identify possible interacting genes.
-Many bin pairs also get clustered into much larger aggregates, so for these events at least, there's not much benefit to using smaller bins.
+While I've tried using 20 kbp bins, this yields 10-fold fewer DIs, most of which (around 90\%) are redundant with those found at 50 kbp.
+So, not worth the extra complication, I think.
 
 \subsection{Coordinating objects}
 

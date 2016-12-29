@@ -52,6 +52,17 @@ On a similar note, there seems to be an increase in same-strand pairs at around 
 My best guess for this is that it represents some pairing between homologous chromosomes.
 This is because you need DNA molecules running in parallel to each other, which is hard to imagine (other than lots of systematic roller-coaster loops).
 
+\subsection{Why do duplicate removal?}
+
+Duplicate removal is safe for a number of reasons.
+The first is that we're dealing with paired-end data, so the probability of fragmentation at the same pair of positions is already low.
+The second is that we also get stochasticity in the formation of ligation products.
+Even if you have the same interaction in multiple cells, you could form many different ligation products.
+This increases the complexity of the library and reduces the probability of accidental duplicates.
+Finally, the read depth across the two-dimensional interaction space is lower than that of ChIP-seq/RNA-seq.
+This further reduces the probability of accidental duplicates.
+Thus, any duplicates that \textit{are} observed are likely to be actual PCR duplicates.
+
 \section{Counting reads into bin pairs}
 
 \subsection{Choice of bin size}

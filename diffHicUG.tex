@@ -1361,11 +1361,11 @@ Thus, use of \code{aveLogCPM} alone is recommended for calculation of the averag
 \end{Schunk}
 
 \section{Filtering out diagonal elements}
-Incomplete removal of artifacts (e.g., dangling ends, self-circles) will generally manifest as increased counts for diagonal bin pairs, i.e., pairs of the same bin.
+Incomplete removal of artifacts (e.g., dangling ends, self-circles) will generally manifest as counts for diagonal bin pairs, i.e., pairs of the same bin.
 If artifact generation and/or removal is not consistent between libraries, the behavior of the diagonal elements will differ markedly from the other bin pairs.
-This can be diagnosed using MA plots between libraries, where the diagonal elements show up as a distinct mass that is unconnected to the rest of the points.
-Such irregularities cannot be smoothly normalized and should be removed prior to further analysis, or analyzed separately.
-Removal can be achieved by generating the \code{ndiag.keep} logical vector for filtering, as shown below.
+This can be diagnosed using MA plots between libraries, where the diagonal elements show up as a distinct mass that is unconnected to the other points.
+As such, they cannot be smoothly normalized and should be removed prior to further analysis or analyzed separately.
+This is done by generating \code{ndiag.keep} for filtering, as shown below.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -1378,11 +1378,12 @@ logical    2614 3316486
 \end{Soutput}
 \end{Schunk}
 
-Obviously, this will also remove short-range interactions that might be of interest.
-Users are advised to use a smaller bin size to recover these interactions.
-Short-range interactions will now be represented by the off-diagonal bin pairs, due to the improved spatial resolution of smaller bins.
-Artifacts will still be restricted to diagonal bin pairs, so long as the bins are larger than $\sim$25 kbp (see Section~\ref{sec:strorient}).
-While count sizes will also decrease, this should not be a major problem as counts should be larger at low interaction distances. 
+Removal of diagonal elements is also motivated by the difficulty of intepreting interactions within a bin.
+For small bin sizes, read pairs corresponding to internal interactions are indistinguishable from those driven by non-specific packaging of a locus.
+The latter is mostly uninteresting and can be avoided by discarding the bin pairs on the diagonal.
+For large bin sizes, internal interactions may be more interesting -- these can be recovered by repeating the analysis with smaller bins.
+Short-range interactions will then be represented by the off-diagonal pairs, while artifacts will still be restricted to diagonal bin pairs, so long as the bins are larger than $\sim$25 kbp (see Section~\ref{sec:strorient}).
+Count sizes will also decrease but this should not be a major problem as counts should be inherently larger at low interaction distances. 
 
 \section{Summary of the filtering strategies}
 Each filtering strategy can be tuned by increasing or decreasing the minimum fold change required for retention.
@@ -2900,12 +2901,12 @@ other attached packages:
 [10] Biostrings_2.43.1                       
 [11] XVector_0.15.0                          
 [12] edgeR_3.17.5                            
-[13] limma_3.31.6                            
+[13] limma_3.31.7                            
 [14] diffHic_1.7.1                           
 [15] InteractionSet_1.3.2                    
 [16] SummarizedExperiment_1.5.3              
 [17] Biobase_2.35.0                          
-[18] GenomicRanges_1.27.16                   
+[18] GenomicRanges_1.27.17                   
 [19] GenomeInfoDb_1.11.6                     
 [20] IRanges_2.9.14                          
 [21] S4Vectors_0.13.5                        
@@ -2917,7 +2918,7 @@ loaded via a namespace (and not attached):
  [7] statmod_1.4.27           RSQLite_1.1-1            memoise_1.0.0           
 [10] rhdf5_2.19.0             lattice_0.20-34          Matrix_1.2-7.1          
 [13] DBI_0.5-1                locfit_1.5-9.1           grid_3.4.0              
-[16] XML_3.98-1.5             Rhtslib_1.7.0            Rsamtools_1.27.8        
+[16] XML_3.98-1.5             Rhtslib_1.7.0            Rsamtools_1.27.9        
 [19] GenomicAlignments_1.11.6 splines_3.4.0            KernSmooth_2.23-15      
 [22] RCurl_1.95-4.8          
 \end{Soutput}

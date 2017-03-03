@@ -1215,34 +1215,41 @@ Otherwise, median calculation or trend fitting will be confounded by discretenes
 \section{Peak-calling in the interaction space}
 
 \subsection{Defining enrichment values for each bin pair}
-Peaks in the interaction space refer to those bin pairs that have substantially more reads than their neighbors.
-The \code{enrichedPairs} function computes an enrichment value for each bin pair, defined as the log-fold change of its abundance against that of its neighbors.
-Those bin pairs with high enrichment values can then be retained.
-This extends the concept of peak calling on the linear genome to the 2-dimensional interaction space \citep{rao2014kilobase}.
+Peaks in the interaction space are bin pairs that have substantially more reads than their neighbors.
+The \code{enrichedPairs} function counts the number of read pairs in the ``neighborhood'' of each bin pair.
+For a bin pair $x$, the function considers several neighborhood regions including bin pairs above or below $x$; in pairs to the left and right of $x$; bin pairs in a box centered at $x$; and for intra-chromosomal bin pairs, the quadrant closest to the diagonal \citep{rao2014kilobase}.
+The size of each neighborhood is determined by \code{flank}, defined in terms of bins.
+In this case, each bin is around 1 Mbp so the flank width has an actual size of $\sim$5 Mbp.
 
 \begin{Schunk}
 \begin{Sinput}
 > flank.width <- 5
-> enrichments <- enrichedPairs(data, flank=flank.width)
+> en.data <- enrichedPairs(data, flank=flank.width)
+\end{Sinput}
+\end{Schunk}
+
+The \code{filterPeaks} function uses the neighborhood counts to compute an enrichment value for each bin pair.
+The average abundance across libraries for each neighborhood region is computed, and the region with the largest abundance is chosen.
+The enrichment value is defined as the difference between the abundance of the bin pair and that of its chosen neighborhood region (adjusted for the number of bin pairs in the latter). 
+Bin pairs with high enrichment values are putative peaks that should be retained.
+This extends the concept of peak calling on the linear genome (e.g., in ChIP-seq) to the 2-dimensional interaction space \citep{rao2014kilobase}.
+Neighborhood regions are defined to capture high-intensity structural features like looping domains, TADs or banding patterns.
+This ensures that the structural features themselves do not drive high enrichment values.
+Rather, to be called a peak, a bin pair in a structural feature must be enriched relative to other bin pairs in the same feature.
+
+\begin{Schunk}
+\begin{Sinput}
+> enrichments <- filterPeaks(en.data, get.enrich=TRUE)
 > summary(enrichments)   
 \end{Sinput}
 \begin{Soutput}
      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
--11.57538  -0.46117  -0.16739  -0.22830   0.08722  10.31538 
+-11.57616  -0.46568  -0.17210       Inf   0.08292       Inf 
 \end{Soutput}
 \end{Schunk}
 
-More specifically, the function partitions the neighborhood into several different regions around the target bin pair.
-The size of the neighborhood is set by \code{flank}, and is defined in terms of bins (actual distance of $\sim$5 Mbp, in this case).
-The average abundance across each region is computed, and the region with the largest abundance is chosen.
-The enrichment value is defined as the log-fold change between the abundances of the target bin pair and the chosen region.
-Peaks are then defined as those bin pairs with high enrichment values.
-The neighborhood regions are designed to capture high-intensity structural features like looping domains, TADs or banding patterns \citep{rao2014kilobase}.
-Any bin pair inside a feature will be compared to other high-abundance bin pairs from the same feature.
-This avoids spuriously high enrichments due to comparisons with bin pairs outside that feature.
-
 In this example, an enrichment value above 0.5 is required for retention.
-This is a modest threshold that errs on the side of caution, as weak peaks may be DIs and should be retained for testing.
+This is a modest threshold that errs on the side of caution, as weak peaks may still be DIs and should be retained for testing.
 In practice, filtering of enrichment values should be combined with filtering on absolute abundances.
 This eliminates low-abundance bin pairs with high enrichment values, e.g., when the neighborhood is empty.
 Near-diagonal elements should also be removed, as these tend to have high enrichment scores without actually being peaks.
@@ -1254,7 +1261,7 @@ All of these steps can be conveniently applied through the \code{filterPeaks} wr
 > sum(peak.keep)
 \end{Sinput}
 \begin{Soutput}
-[1] 90049
+[1] 88356
 \end{Soutput}
 \end{Schunk}
 
@@ -1265,7 +1272,7 @@ Red boxes mark the bin pairs retained by filtering, where each side represents a
 In both examples, the bin pairs correspond nicely to punctate high-intensity contacts in the interaction space.
 
 \begin{center}
-\includegraphics{plots-ug/ug-055}
+\includegraphics{plots-ug/ug-056}
 \end{center}
 
 Another diagnostic is based on the sparsity of putative peaks.
@@ -1283,7 +1290,7 @@ Larger proportions suggest that more aggressive filtering on the enrichment scor
 \end{Sinput}
 \begin{Soutput}
    1    2    3    4    5    6    7    8    9   10  >10 
-21.7 22.0 18.2 13.3  9.1  5.8  3.7  2.3  1.6  0.9  1.5 
+22.3 22.3 18.2 13.0  8.8  5.6  3.5  2.3  1.6  0.9  1.5 
 \end{Soutput}
 \begin{Sinput}
 > peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, min.count=5, min.diag=2L)
@@ -1293,7 +1300,7 @@ Larger proportions suggest that more aggressive filtering on the enrichment scor
 \end{Sinput}
 \begin{Soutput}
    1    2    3    4    5    6    7    8    9   10  >10 
- 5.4  4.3  4.0  3.7  3.7  3.4  3.0  3.0  2.8  2.7 64.0 
+ 5.4  4.3  4.0  3.7  3.7  3.4  3.1  2.9  2.8  2.7 64.0 
 \end{Soutput}
 \end{Schunk}
 
@@ -1320,19 +1327,13 @@ This reduces memory usage at the cost of some speed.
 class: InteractionSet 
 dim: 1060845 4 
 metadata(2): param width
-assays(1): counts
+assays(5): counts quadrant vertical horizontal surrounding
 rownames: NULL
-rowData names(1): enrichment
+rowData names(4): N.quadrant N.vertical N.horizontal N.surrounding
 colnames: NULL
 colData names(1): totals
 type: ReverseStrictGInteractions
 regions: 26729
-\end{Soutput}
-\begin{Sinput}
-> head(mcols(en.data)$enrichment)
-\end{Sinput}
-\begin{Soutput}
-[1] -4.1027453  0.6462892 -0.7700094 -0.2075542 -1.0503617 -0.9616102
 \end{Soutput}
 \end{Schunk}
 
@@ -1488,7 +1489,7 @@ The example below compares one library from each group, which can be repeated fo
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-068}
+\includegraphics{plots-ug/ug-069}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1544,7 +1545,7 @@ Most of the trend is removed, indicating that non-linear normalization was succe
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-073}
+\includegraphics{plots-ug/ug-074}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1747,7 +1748,7 @@ Note that increasing \code{maxk} may be necessary to obtain sufficient accuracy 
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-083}
+\includegraphics{plots-ug/ug-084}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1849,7 +1850,7 @@ The aim is to improve modelling accuracy by empirically modelling any non-NB mea
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-088}
+\includegraphics{plots-ug/ug-089}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1883,7 +1884,7 @@ This stabilizes the QL dispersion estimates and improves precision for downstrea
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-091}
+\includegraphics{plots-ug/ug-092}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2100,13 +2101,13 @@ Significant clusters are then defined at a certain FDR threshold, e.g., 5\%.
 > head(tabcluster)
 \end{Sinput}
 \begin{Soutput}
-  nWindows logFC.up logFC.down       PValue          FDR
-1        1        0          1 3.251461e-02 1.388666e-01
-2       55        0          0 2.636977e-02 1.190695e-01
-3       99        1         10 2.925148e-01 5.475090e-01
-4       55        0          6 8.591867e-10 7.521332e-08
-5       99       26          4 1.598432e-01 3.888596e-01
-6      100        1         14 8.480900e-05 1.027224e-03
+  nWindows logFC.up logFC.down       PValue          FDR direction
+1        1        0          1 3.251461e-02 1.388666e-01      down
+2       55        0          0 2.636977e-02 1.190695e-01        up
+3       99        1         10 2.925148e-01 5.475090e-01     mixed
+4       55        0          6 8.591867e-10 7.521332e-08      down
+5       99       26          4 1.598432e-01 3.888596e-01        up
+6      100        1         14 8.480900e-05 1.027224e-03      down
 \end{Soutput}
 \begin{Sinput}
 > sum(tabcluster$FDR <= 0.05)
@@ -2208,13 +2209,13 @@ Users are advised to ignore the $p$-value and FDR fields as these assume indepen
 > head(tabcom)
 \end{Sinput}
 \begin{Soutput}
-  nWindows logFC.up logFC.down       PValue          FDR
-1        1        0          0 8.232598e-04 9.948283e-04
-2        1        0          0 1.338344e-03 1.351877e-03
-3        1        0          0 8.615071e-04 1.020448e-03
-4        1        0          0 2.545062e-04 4.645498e-04
-5        1        0          0 7.417598e-05 2.046502e-04
-6        1        1          0 3.303351e-06 2.440763e-05
+  nWindows logFC.up logFC.down       PValue          FDR direction
+1        1        0          0 8.232598e-04 9.948283e-04        up
+2        1        0          0 1.338344e-03 1.351877e-03        up
+3        1        0          0 8.615071e-04 1.020448e-03        up
+4        1        0          0 2.545062e-04 4.645498e-04        up
+5        1        0          0 7.417598e-05 2.046502e-04        up
+6        1        1          0 3.303351e-06 2.440763e-05        up
 \end{Soutput}
 \begin{Sinput}
 > tabbest <- getBestTest(clustered.sig$indices[[1]], result$table)
@@ -2307,13 +2308,13 @@ The BH method is then applied to the combined $p$-values to control the cluster-
 > head(cons)
 \end{Sinput}
 \begin{Soutput}
-  nWindows logFC.up logFC.down       PValue          FDR
-1        2        0          2 8.290943e-04 2.311825e-02
-2       56        0          0 1.043286e-02 1.301009e-01
-3      100        1         10 3.732473e-01 7.056014e-01
-4       56        0          6 1.718373e-09 6.708121e-07
-5      100       26          4 3.196865e-01 6.632161e-01
-6      101        1         14 1.696180e-04 6.788497e-03
+  nWindows logFC.up logFC.down       PValue          FDR direction
+1        2        0          2 8.290943e-04 2.311825e-02      down
+2       56        0          0 1.043286e-02 1.301009e-01        up
+3      100        1         10 3.732473e-01 7.056014e-01     mixed
+4       56        0          6 1.718373e-09 6.708121e-07      down
+5      100       26          4 3.196865e-01 6.632161e-01        up
+6      101        1         14 1.696180e-04 6.788497e-03      down
 \end{Soutput}
 \begin{Sinput}
 > sum(cons$FDR <= 0.05)
@@ -2411,8 +2412,8 @@ The actual bin pair occurs at the center of the plot and is marked by a rectangl
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-117}
 \includegraphics{plots-ug/ug-118}
+\includegraphics{plots-ug/ug-119}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2456,8 +2457,8 @@ Of course, any sharp changes within each of these large bin pairs will be overlo
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-124}
 \includegraphics{plots-ug/ug-125}
+\includegraphics{plots-ug/ug-126}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2493,9 +2494,9 @@ The coordinates of each interacting bin can be identified by extending lines fro
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-131}
-\\
 \includegraphics{plots-ug/ug-132}
+\\
+\includegraphics{plots-ug/ug-133}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2523,7 +2524,7 @@ The log-fold changes also incorporate normalization information, which is diffic
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-134}
+\includegraphics{plots-ug/ug-135}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2550,7 +2551,7 @@ A similar function that maps counts to colors is also returned by \code{plotPlai
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-137}
+\includegraphics{plots-ug/ug-138}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2704,7 +2705,7 @@ The mean-dependent trend in the NB dispersions is modelled using \code{estimateD
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-145}
+\includegraphics{plots-ug/ug-146}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2719,7 +2720,7 @@ A GLM is fitted to the counts for each bin using the specified model and the tre
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-147}
+\includegraphics{plots-ug/ug-148}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2736,16 +2737,16 @@ The \code{makeContrasts} function is used to construct an appropriate contrast v
 \begin{Soutput}
 Coefficient:  -1*Conditionflox 1*Conditionko 
            logFC   logCPM         F       PValue          FDR
-2386   0.9988340 4.162087 154.24808 8.060071e-17 2.025254e-12
-4595  -1.1083619 3.422453 131.62341 1.511298e-15 1.898719e-11
-1408   1.0645073 3.912424 132.28480 3.538194e-15 2.963474e-11
-14712  0.8743536 4.239697 115.14725 1.628956e-14 1.023269e-10
-5606   0.9730969 3.687062 111.38663 2.898849e-14 1.456787e-10
-12073  0.8063455 4.229938 106.29182 6.470905e-14 2.709907e-10
-1872  -0.7809661 4.451015 105.05435 7.896099e-14 2.834361e-10
-16854 -0.8406668 4.108131 104.20904 9.054599e-14 2.843936e-10
-757   -0.7928171 4.229549  96.66591 3.181200e-13 8.881556e-10
-6323   0.8459912 3.929275  95.71750 3.742991e-13 9.100851e-10
+2386   0.9988340 4.162087 154.24808 8.060085e-17 2.025258e-12
+4595  -1.1083619 3.422453 131.62341 1.511300e-15 1.898722e-11
+1408   1.0645073 3.912424 132.28480 3.538199e-15 2.963478e-11
+14712  0.8743536 4.239697 115.14725 1.628958e-14 1.023271e-10
+5606   0.9730969 3.687062 111.38663 2.898853e-14 1.456789e-10
+12073  0.8063455 4.229938 106.29182 6.470913e-14 2.709911e-10
+1872  -0.7809661 4.451015 105.05435 7.896109e-14 2.834365e-10
+16854 -0.8406668 4.108131 104.20904 9.054610e-14 2.843940e-10
+757   -0.7928171 4.229549  96.66591 3.181203e-13 8.881567e-10
+6323   0.8459912 3.929275  95.71750 3.742996e-13 9.100861e-10
 \end{Soutput}
 \end{Schunk}
 
@@ -2822,9 +2823,9 @@ Each rotated plaid plot shows the surrounding interaction space, with the region
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-156}
-\\
 \includegraphics{plots-ug/ug-157}
+\\
+\includegraphics{plots-ug/ug-158}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2889,38 +2890,40 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] csaw_1.9.3                              
- [2] BiocParallel_1.9.4                      
+ [1] csaw_1.9.7                              
+ [2] BiocParallel_1.9.5                      
  [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.0
- [4] GenomicFeatures_1.27.6                  
- [5] AnnotationDbi_1.37.0                    
+ [4] GenomicFeatures_1.27.9                  
+ [5] AnnotationDbi_1.37.3                    
  [6] BSgenome.Mmusculus.UCSC.mm10_1.4.0      
  [7] BSgenome.Hsapiens.UCSC.hg19_1.4.0       
- [8] BSgenome_1.43.1                         
- [9] rtracklayer_1.35.1                      
-[10] Biostrings_2.43.1                       
-[11] XVector_0.15.0                          
+ [8] BSgenome_1.43.7                         
+ [9] rtracklayer_1.35.6                      
+[10] Biostrings_2.43.4                       
+[11] XVector_0.15.2                          
 [12] edgeR_3.17.5                            
-[13] limma_3.31.7                            
-[14] diffHic_1.7.1                           
-[15] InteractionSet_1.3.2                    
-[16] SummarizedExperiment_1.5.3              
-[17] Biobase_2.35.0                          
-[18] GenomicRanges_1.27.18                   
-[19] GenomeInfoDb_1.11.6                     
-[20] IRanges_2.9.14                          
-[21] S4Vectors_0.13.5                        
-[22] BiocGenerics_0.21.1                     
+[13] limma_3.31.15                           
+[14] diffHic_1.7.2                           
+[15] InteractionSet_1.3.3                    
+[16] SummarizedExperiment_1.5.7              
+[17] DelayedArray_0.1.7                      
+[18] matrixStats_0.51.0                      
+[19] Biobase_2.35.1                          
+[20] GenomicRanges_1.27.23                   
+[21] GenomeInfoDb_1.11.9                     
+[22] IRanges_2.9.18                          
+[23] S4Vectors_0.13.15                       
+[24] BiocGenerics_0.21.3                     
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.8              bitops_1.0-6             tools_3.4.0             
- [4] zlibbioc_1.21.0          biomaRt_2.31.3           digest_0.6.11           
- [7] statmod_1.4.27           RSQLite_1.1-1            memoise_1.0.0           
-[10] rhdf5_2.19.0             lattice_0.20-34          Matrix_1.2-7.1          
-[13] DBI_0.5-1                locfit_1.5-9.1           grid_3.4.0              
-[16] XML_3.98-1.5             Rhtslib_1.7.0            Rsamtools_1.27.9        
-[19] GenomicAlignments_1.11.6 splines_3.4.0            KernSmooth_2.23-15      
-[22] RCurl_1.95-4.8          
+ [1] Rcpp_0.12.9              bitops_1.0-6             tools_3.4.0             
+ [4] zlibbioc_1.21.0          statmod_1.4.29           biomaRt_2.31.4          
+ [7] digest_0.6.12            RSQLite_1.1-2            memoise_1.0.0           
+[10] rhdf5_2.19.0             lattice_0.20-34          Matrix_1.2-8            
+[13] DBI_0.5-1                GenomeInfoDbData_0.99.0  locfit_1.5-9.1          
+[16] grid_3.4.0               XML_3.98-1.5             Rhtslib_1.7.0           
+[19] Rsamtools_1.27.12        GenomicAlignments_1.11.9 splines_3.4.0           
+[22] KernSmooth_2.23-15       RCurl_1.95-4.8          
 \end{Soutput}
 \end{Schunk}
 

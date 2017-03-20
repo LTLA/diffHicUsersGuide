@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 11 December 2016}
+Last revised 20 March 2017}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -468,25 +468,21 @@ The alignment length refers to the span of the alignment relative to the referen
 This information will be used in downstream \pkgname{} functions, such as read counting around blacklisted regions.
 
 \section{Handling DNase Hi-C experiments}
-DNase Hi-C is a variant of the standard technique, whereby the DNase~I enzyme is used to fragment the genome instead of restriction enzymes \citep{ma2015dnase}.
-This allows for resolution beyond that of individual restriction fragments.
+DNase Hi-C is a variant of the standard protocol whereby the DNase~I enzyme is used to fragment the genome instead of restriction enzymes \citep{ma2015dnase}.
+Random fragmentation provides resolution beyond that of individual restriction fragments.
 However, cleavage sites for DNase~I cannot be easily predicted to construct \code{param\$fragments}.
-Formation of index files is subsequently inappropriate, as there are no restriction fragments for reads to be assigned to.
+Fragment indices have no meaning here because there are no restriction fragments for reads to be assigned to.
 
-To handle this type of data in \pkgname{}, a workaround is provided using the concept of ``pseudo-fragments''.
-The genome is partitioned into contiguous and non-overlapping pseudo-fragments of constant size, using the \code{segmentGenome} function.
-Reads can then be assigned into each pseudo-fragment in the same manner as that to actual restriction fragments for standard Hi-C.
-This is done using the \code{prepPseudoPairs} function, which is (almost) equivalent to running \code{preparePairs} with the pseudo-fragment coordinates in \code{param\$fragments}.
-
-An example of this approach is shown below.
-For demonstration purposes, the SRR027957 library will be treated as DNase Hi-C sample.
-The hg19 genome is segmented into 500 bp pseudo-fragments, and reads are then assigned to each of these pseudo-fragments.
+Instead, \pkgname{} handles this type of data by operating directly on the alignment position of each read.
+This exploits the theoretical base-pair resolution of the data during quantification.
+To indicate that the data are from a DNase Hi-C experiment, an empty \code{GRanges} object should be supplied as the \code{fragments} in \code{pairParam}.
+Most \pkgname{} functions will detect this and behave appropriately to make use of the improved resolution.
+An example of this approach is shown below, where the SRR027957 library is treated as DNase Hi-C sample.
 
 \begin{Schunk}
 \begin{Sinput}
-> seg.frags <- segmentGenome(BSgenome.Hsapiens.UCSC.hg19, size=500)
-> prepPseudoPairs("SRR027957.bam", pairParam(seg.frags), file="SRR027957.h5", 
-+     dedup=TRUE, minq=10)
+> seg.frags <- emptyGenome(BSgenome.Hsapiens.UCSC.hg19)
+> preparePairs("SRR027957.bam", pairParam(seg.frags), file="SRR027957.h5", dedup=TRUE, minq=10)
 \end{Sinput}
 \begin{Soutput}
 $pairs
@@ -502,17 +498,13 @@ $chimeras
 \end{Soutput}
 \end{Schunk}
 
-Unlike \code{preparePairs}, no diagnostic information regarding self-circles or dangling ends is reported.
-Such metrics are based on restriction fragment coordinates, but these are not experimentally relevant for artificial pseudo-fragments.
-Similarly, the length of the sequencing fragment is computed from artificial fragment boundaries and has little meaning.
-This means that the \code{length} field should be ignored in the output of \code{getPairData}.
-The \code{max.frag} argument should also be set to \code{NA} in \code{prunePairs}.
+Unlike \code{preparePairs}, no diagnostic information regarding self-circles or dangling ends is reported here.
+Such metrics are irrelevant when restriction fragments are not involved.
+Similarly, the \code{length} field in the output of \code{getPairData} is set to \code{NA} and should be ignored.
+This is because the length of the sequencing fragment cannot be generally computed without knowledge of the fragmentation sites.
+As a result, the \code{max.frag} argument should also be set to \code{NA} in \code{prunePairs}.
 Metrics for inward- and outward-facing read pairs are unaffected, as these are computed independently of the fragments.
-
-This pseudo-fragment strategy allows easy passage through the \pkgname{} pipeline.
-While some spatial resolution is lost, this is largely irrelevant in downstream steps.
-For example, counting across the interaction space will use regions much larger than the pseudo-fragments. 
-Any loss of resolution from pseudo-fragment assignment is likely to be negligble.
+See the documentation for individual functions to determine if/how their behaviour changes for DNase Hi-C data.
 
 Users should also note that the alignment script described in Section~\ref{sec:align} is not appropriate for DNase Hi-C experiments.
 This approach is based on splitting chimeric reads at the ligation signature, which is constructed from the recognition site of a restriction enzyme.
@@ -1230,7 +1222,7 @@ In this case, each bin is around 1 Mbp so the flank width has an actual size of 
 
 The \code{filterPeaks} function uses the neighborhood counts to compute an enrichment value for each bin pair.
 The average abundance across libraries for each neighborhood region is computed, and the region with the largest abundance is chosen.
-The enrichment value is defined as the difference between the abundance of the bin pair and that of its chosen neighborhood region (adjusted for the number of bin pairs in the latter). 
+The enrichment value is defined as the difference between the abundance of the bin pair and that of its chosen neighborhood region (adjusted for the number of bin pairs in the latter).
 Bin pairs with high enrichment values are putative peaks that should be retained.
 This extends the concept of peak calling on the linear genome (e.g., in ChIP-seq) to the 2-dimensional interaction space \citep{rao2014kilobase}.
 Neighborhood regions are defined to capture high-intensity structural features like looping domains, TADs or banding patterns.
@@ -2890,20 +2882,20 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] csaw_1.9.7                              
+ [1] csaw_1.9.8                              
  [2] BiocParallel_1.9.5                      
  [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.0
- [4] GenomicFeatures_1.27.9                  
- [5] AnnotationDbi_1.37.3                    
+ [4] GenomicFeatures_1.27.10                 
+ [5] AnnotationDbi_1.37.4                    
  [6] BSgenome.Mmusculus.UCSC.mm10_1.4.0      
  [7] BSgenome.Hsapiens.UCSC.hg19_1.4.0       
  [8] BSgenome_1.43.7                         
- [9] rtracklayer_1.35.6                      
-[10] Biostrings_2.43.4                       
+ [9] rtracklayer_1.35.9                      
+[10] Biostrings_2.43.5                       
 [11] XVector_0.15.2                          
 [12] edgeR_3.17.5                            
-[13] limma_3.31.15                           
-[14] diffHic_1.7.2                           
+[13] limma_3.31.19                           
+[14] diffHic_1.7.4                           
 [15] InteractionSet_1.3.3                    
 [16] SummarizedExperiment_1.5.7              
 [17] DelayedArray_0.1.7                      
@@ -2911,19 +2903,23 @@ other attached packages:
 [19] Biobase_2.35.1                          
 [20] GenomicRanges_1.27.23                   
 [21] GenomeInfoDb_1.11.9                     
-[22] IRanges_2.9.18                          
+[22] IRanges_2.9.19                          
 [23] S4Vectors_0.13.15                       
 [24] BiocGenerics_0.21.3                     
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.9              bitops_1.0-6             tools_3.4.0             
- [4] zlibbioc_1.21.0          statmod_1.4.29           biomaRt_2.31.4          
- [7] digest_0.6.12            RSQLite_1.1-2            memoise_1.0.0           
-[10] rhdf5_2.19.0             lattice_0.20-34          Matrix_1.2-8            
-[13] DBI_0.5-1                GenomeInfoDbData_0.99.0  locfit_1.5-9.1          
-[16] grid_3.4.0               XML_3.98-1.5             Rhtslib_1.7.0           
-[19] Rsamtools_1.27.12        GenomicAlignments_1.11.9 splines_3.4.0           
-[22] KernSmooth_2.23-15       RCurl_1.95-4.8          
+ [1] Rcpp_0.12.10              bitops_1.0-6             
+ [3] tools_3.4.0               zlibbioc_1.21.0          
+ [5] statmod_1.4.29            biomaRt_2.31.4           
+ [7] digest_0.6.12             RSQLite_1.1-2            
+ [9] memoise_1.0.0             rhdf5_2.19.1             
+[11] lattice_0.20-34           Matrix_1.2-8             
+[13] DBI_0.6                   GenomeInfoDbData_0.99.0  
+[15] locfit_1.5-9.1            grid_3.4.0               
+[17] XML_3.98-1.5              Rhtslib_1.7.0            
+[19] Rsamtools_1.27.13         GenomicAlignments_1.11.12
+[21] splines_3.4.0             KernSmooth_2.23-15       
+[23] RCurl_1.95-4.8           
 \end{Soutput}
 \end{Schunk}
 

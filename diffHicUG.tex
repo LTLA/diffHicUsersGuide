@@ -474,10 +474,10 @@ However, cleavage sites for DNase~I cannot be easily predicted to construct \cod
 Fragment indices have no meaning here because there are no restriction fragments for reads to be assigned to.
 
 Instead, \pkgname{} handles this type of data by operating directly on the alignment position of each read.
-This exploits the theoretical base-pair resolution of the data during quantification.
-To indicate that the data are from a DNase Hi-C experiment, an empty \code{GRanges} object should be supplied as the \code{fragments} in \code{pairParam}.
-Most \pkgname{} functions will detect this and behave appropriately to make use of the improved resolution.
-An example of this approach is shown below, where the SRR027957 library is treated as DNase Hi-C sample.
+This reflects the theoretical base-pair resolution of the data during quantification.
+To indicate that the reads come from a DNase Hi-C experiment, an empty \code{GRanges} object should be supplied as the \code{fragments} in \code{pairParam}.
+Most \pkgname{} functions will detect this and behave appropriately to exploit the improved resolution.
+An example of this approach is shown below, where the SRR027957 library is treated as a DNase Hi-C sample.
 
 \begin{Schunk}
 \begin{Sinput}

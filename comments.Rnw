@@ -46,11 +46,17 @@ It is hypothetically possible that these spikes reflect some genuine aspect of c
 For example, the outward-facing spike may be the result of systematic outward looping in chromatin packaging.
 Removal of the spikes would preclude the detection of such features.
 Nonetheless, filtering is still recommended to prevent genuine interactions from being dominated by technical artifacts.
-Indeed, even if there are imbalances in the strand orientations for any one genuine interaction, these skews should balance out when read pairs from all interactions are considered (i.e., assume no systematic bias in the orientation).
+Even if there are imbalances in the strand orientations for any one genuine interaction, these skews should balance out when read pairs from all interactions are considered.
+In other words, there should not be any systematic bias in the orientation across all interactions.
 
 On a similar note, there seems to be an increase in same-strand pairs at around the same size as the outward-facing self-ligation artifacts.
 My best guess for this is that it represents some pairing between homologous chromosomes.
 This is because you need DNA molecules running in parallel to each other, which is hard to imagine (other than lots of systematic roller-coaster loops).
+
+The pruning could be optimized by keeping chimeric inward-facing reads at short distances.
+Due to their chimeric nature, it is impossible for them to be generated from dangling ends.
+However, this is only relevant to studying interactions at very short distances, i.e., below the usual 1 kbp threshold for removing dangling ends.
+I can't be bothered to restructure the code to catch these, especially given that the proportion of chimeras isn't that high if you're using 75-100 bp reads.
 
 \subsection{Why do duplicate removal?}
 

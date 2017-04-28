@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 20 March 2017}
+Last revised 28 April 2017}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -726,8 +726,8 @@ hist(ave.ab, xlab="Average abundance")
 Any bin pair with an average abundance less than a specified threshold value will be discarded.
 At the very least, the threshold should be chosen to filter out bin pairs with very low absolute counts.
 This is because these bin pairs will never have sufficient evidence to reject the null hypothesis.
-The discreteness of low counts will also interfere with the asymptotic approximations that are required for downstream statistical modelling.
-The example below identifies those bin pairs with an overall NB mean not less than 5.
+The discreteness of low counts will also reduce the accuracy of approximations that are used in normalization and statistical modelling.
+The example below identifies those bin pairs where the overall NB mean across all samples is not less than 5.
 
 <<>>=
 count.keep <- ave.ab >= aveLogCPM(5, lib.size=mean(data$totals))
@@ -756,10 +756,11 @@ These are represented by low-abundance bin pairs where no underlying contact is 
 Any changes in the counts for these bin pairs are uninteresting and are ignored.
 In particular, the filter threshold can be defined by mandating some minimum fold change above the level of non-specific ligation.
 
-The magnitude of non-specific ligation can be empirically estimated by assuming that most inter-chromosomal contacts are not genuine. 
+The magnitude of non-specific ligation is empirically estimated by assuming that most inter-chromosomal contacts are not genuine. 
 This is reasonable given that most chromosomes are arranged in self-interacting territories \citep{bickmore2013spatial}.
-The median abundance across inter-chromosomal bin pairs is used as the estimate of the non-specific ligation rate. 
-Here, the threshold is defined as a minimum fold change of 5 above this estimate.
+The median abundance across inter-chromosomal bin pairs is used as an estimate of the non-specific ligation rate. 
+Here, filtering is performed to retain only those bin pairs with abundances that are at least 5-fold higher than this estimate.
+This aims to remove the majority of uninteresting bin pairs.
 
 <<>>=
 direct <- filterDirect(data)
@@ -965,15 +966,22 @@ for (chosen in seq_along(a1.list)) {
 
 Another diagnostic is based on the sparsity of putative peaks.
 Bin pairs nested within larger ``parent'' bin pairs are identified using the \code{boxPairs} function.
-Most of these parents should contain low numbers (e.g., less than 5) of nested bin pairs.
+Most of these parents should contain low numbers of nested bin pairs.
 This is because each peak, by definition, should be isolated in its neighborhood.
-Larger proportions suggest that more aggressive filtering on the enrichment score is required, e.g., in the second example. 
+The example below calculates the percentage of parents that contain a given number (from 1 to 10, or higher) of nested bin pairs.
 
 <<>>=
 neighborhood <- (2*flank.width + 1) * metadata(data)$width
 boxed <- boxPairs(data[peak.keep], reference=neighborhood)
 out <- tabulate(tabulate(boxed$indices[[1]]))
 setNames(round(c(out[1:10], sum(out[11:length(out)]))/sum(out)*100, 1), c(1:10, ">10"))
+@
+
+Most parents should contain few bin pairs ($\le 10$, as a rule of thumb), as shown above.
+In the second example below, a larger proportion of parents with many nested bin pairs is observed.
+This suggests that more aggressive filtering on the enrichment score is required.
+
+<<>>=
 peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, min.count=5, min.diag=2L)
 boxed <- boxPairs(data[peak.keep2], reference=neighborhood)
 out <- tabulate(tabulate(boxed$indices[[1]]))

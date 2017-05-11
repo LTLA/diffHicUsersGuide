@@ -45,7 +45,7 @@
 % Set to change date for document, not compile date.
 \date{First edition 12 December 2012\\
 \vspace{6pt}
-Last revised 20 March 2017}
+Last revised 28 April 2017}
 
 % Removing the bibliography title so it shows up in the contents.
 \makeatletter
@@ -271,14 +271,14 @@ $pairs
 
 $same.id
    dangling self.circle 
-     423612      138248 
+     425219      138248 
 
 $singles
 [1] 0
 
 $chimeras
   total  mapped   multi invalid 
-2495159 1725927 1040908   68231 
+2495159 1725843 1040864   67989 
 \end{Soutput}
 \end{Schunk}
 
@@ -311,7 +311,7 @@ High error rates may be indicative of a fault in the mapping pipeline.
 > diagnostics$chimeras[["invalid"]]/diagnostics$chimeras[["multi"]]
 \end{Sinput}
 \begin{Soutput}
-[1] 0.0655495
+[1] 0.06531977
 \end{Soutput}
 \end{Schunk}
 
@@ -336,7 +336,7 @@ Retained read pairs are stored in another index file for later use.
 \end{Sinput}
 \begin{Soutput}
    total   length   inward  outward retained 
- 4898260   871731    94961    84254  3860024 
+ 4896653   870339    94644    82964  3860024 
 \end{Soutput}
 \end{Schunk}
 
@@ -494,7 +494,7 @@ $singles
 
 $chimeras
   total  mapped   multi invalid 
-2495159 1779050 1073948   41849 
+2495159 1779050 1073948   41582 
 \end{Soutput}
 \end{Schunk}
 
@@ -986,8 +986,8 @@ The log-mean-per-million is known as the average abundance and can be computed w
 Any bin pair with an average abundance less than a specified threshold value will be discarded.
 At the very least, the threshold should be chosen to filter out bin pairs with very low absolute counts.
 This is because these bin pairs will never have sufficient evidence to reject the null hypothesis.
-The discreteness of low counts will also interfere with the asymptotic approximations that are required for downstream statistical modelling.
-The example below identifies those bin pairs with an overall NB mean not less than 5.
+The discreteness of low counts will also reduce the accuracy of approximations that are used in normalization and statistical modelling.
+The example below identifies those bin pairs where the overall NB mean across all samples is not less than 5.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -1024,10 +1024,11 @@ These are represented by low-abundance bin pairs where no underlying contact is 
 Any changes in the counts for these bin pairs are uninteresting and are ignored.
 In particular, the filter threshold can be defined by mandating some minimum fold change above the level of non-specific ligation.
 
-The magnitude of non-specific ligation can be empirically estimated by assuming that most inter-chromosomal contacts are not genuine. 
+The magnitude of non-specific ligation is empirically estimated by assuming that most inter-chromosomal contacts are not genuine. 
 This is reasonable given that most chromosomes are arranged in self-interacting territories \citep{bickmore2013spatial}.
-The median abundance across inter-chromosomal bin pairs is used as the estimate of the non-specific ligation rate. 
-Here, the threshold is defined as a minimum fold change of 5 above this estimate.
+The median abundance across inter-chromosomal bin pairs is used as an estimate of the non-specific ligation rate. 
+Here, filtering is performed to retain only those bin pairs with abundances that are at least 5-fold higher than this estimate.
+This aims to remove the majority of uninteresting bin pairs.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -1269,9 +1270,9 @@ In both examples, the bin pairs correspond nicely to punctate high-intensity con
 
 Another diagnostic is based on the sparsity of putative peaks.
 Bin pairs nested within larger ``parent'' bin pairs are identified using the \code{boxPairs} function.
-Most of these parents should contain low numbers (e.g., less than 5) of nested bin pairs.
+Most of these parents should contain low numbers of nested bin pairs.
 This is because each peak, by definition, should be isolated in its neighborhood.
-Larger proportions suggest that more aggressive filtering on the enrichment score is required, e.g., in the second example. 
+The example below calculates the percentage of parents that contain a given number (from 1 to 10, or higher) of nested bin pairs.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -1284,6 +1285,13 @@ Larger proportions suggest that more aggressive filtering on the enrichment scor
    1    2    3    4    5    6    7    8    9   10  >10 
 22.3 22.3 18.2 13.0  8.8  5.6  3.5  2.3  1.6  0.9  1.5 
 \end{Soutput}
+\end{Schunk}
+
+Most parents should contain few bin pairs ($\le 10$, as a rule of thumb), as shown above.
+In the second example below, a larger proportion of parents with many nested bin pairs is observed.
+This suggests that more aggressive filtering on the enrichment score is required.
+
+\begin{Schunk}
 \begin{Sinput}
 > peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, min.count=5, min.diag=2L)
 > boxed <- boxPairs(data[peak.keep2], reference=neighborhood)
@@ -1481,7 +1489,7 @@ The example below compares one library from each group, which can be repeated fo
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-069}
+\includegraphics{plots-ug/ug-070}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1537,7 +1545,7 @@ Most of the trend is removed, indicating that non-linear normalization was succe
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-074}
+\includegraphics{plots-ug/ug-075}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1740,7 +1748,7 @@ Note that increasing \code{maxk} may be necessary to obtain sufficient accuracy 
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-084}
+\includegraphics{plots-ug/ug-085}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1842,7 +1850,7 @@ The aim is to improve modelling accuracy by empirically modelling any non-NB mea
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-089}
+\includegraphics{plots-ug/ug-090}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -1876,7 +1884,7 @@ This stabilizes the QL dispersion estimates and improves precision for downstrea
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-092}
+\includegraphics{plots-ug/ug-093}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2404,8 +2412,8 @@ The actual bin pair occurs at the center of the plot and is marked by a rectangl
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-118}
 \includegraphics{plots-ug/ug-119}
+\includegraphics{plots-ug/ug-120}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2449,8 +2457,8 @@ Of course, any sharp changes within each of these large bin pairs will be overlo
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-125}
 \includegraphics{plots-ug/ug-126}
+\includegraphics{plots-ug/ug-127}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2486,9 +2494,9 @@ The coordinates of each interacting bin can be identified by extending lines fro
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-132}
-\\
 \includegraphics{plots-ug/ug-133}
+\\
+\includegraphics{plots-ug/ug-134}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2516,7 +2524,7 @@ The log-fold changes also incorporate normalization information, which is diffic
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-135}
+\includegraphics{plots-ug/ug-136}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2543,7 +2551,7 @@ A similar function that maps counts to colors is also returned by \code{plotPlai
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-138}
+\includegraphics{plots-ug/ug-139}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2697,7 +2705,7 @@ The mean-dependent trend in the NB dispersions is modelled using \code{estimateD
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-146}
+\includegraphics{plots-ug/ug-147}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2712,7 +2720,7 @@ A GLM is fitted to the counts for each bin using the specified model and the tre
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-148}
+\includegraphics{plots-ug/ug-149}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2815,9 +2823,9 @@ Each rotated plaid plot shows the surrounding interaction space, with the region
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-\includegraphics{plots-ug/ug-157}
-\\
 \includegraphics{plots-ug/ug-158}
+\\
+\includegraphics{plots-ug/ug-159}
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
@@ -2865,9 +2873,13 @@ Some software packages are also required - read \code{sra2bam.sh} for more detai
 > sessionInfo()
 \end{Sinput}
 \begin{Soutput}
-R Under development (unstable) (2016-10-20 r71540)
+R version 3.4.0 Patched (2017-04-28 r72639)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: CentOS release 6.4 (Final)
+
+Matrix products: default
+BLAS: /wehisan/home/allstaff/a/alun/Software/R/R-3-4-branch_devel/lib/libRblas.so
+LAPACK: /wehisan/home/allstaff/a/alun/Software/R/R-3-4-branch_devel/lib/libRlapack.so
 
 locale:
  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
@@ -2882,44 +2894,42 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] csaw_1.9.8                              
- [2] BiocParallel_1.9.5                      
+ [1] csaw_1.11.0                             
+ [2] BiocParallel_1.11.1                     
  [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.0
- [4] GenomicFeatures_1.27.10                 
- [5] AnnotationDbi_1.37.4                    
+ [4] GenomicFeatures_1.29.1                  
+ [5] AnnotationDbi_1.39.0                    
  [6] BSgenome.Mmusculus.UCSC.mm10_1.4.0      
  [7] BSgenome.Hsapiens.UCSC.hg19_1.4.0       
- [8] BSgenome_1.43.7                         
- [9] rtracklayer_1.35.9                      
-[10] Biostrings_2.43.5                       
-[11] XVector_0.15.2                          
-[12] edgeR_3.17.5                            
-[13] limma_3.31.19                           
-[14] diffHic_1.7.4                           
-[15] InteractionSet_1.3.3                    
-[16] SummarizedExperiment_1.5.7              
-[17] DelayedArray_0.1.7                      
-[18] matrixStats_0.51.0                      
-[19] Biobase_2.35.1                          
-[20] GenomicRanges_1.27.23                   
-[21] GenomeInfoDb_1.11.9                     
-[22] IRanges_2.9.19                          
-[23] S4Vectors_0.13.15                       
-[24] BiocGenerics_0.21.3                     
+ [8] BSgenome_1.45.1                         
+ [9] rtracklayer_1.37.0                      
+[10] Biostrings_2.45.0                       
+[11] XVector_0.17.0                          
+[12] edgeR_3.19.0                            
+[13] limma_3.33.2                            
+[14] diffHic_1.9.0                           
+[15] InteractionSet_1.5.1                    
+[16] SummarizedExperiment_1.7.2              
+[17] DelayedArray_0.3.5                      
+[18] matrixStats_0.52.2                      
+[19] Biobase_2.37.2                          
+[20] GenomicRanges_1.29.3                    
+[21] GenomeInfoDb_1.13.1                     
+[22] IRanges_2.11.2                          
+[23] S4Vectors_0.15.1                        
+[24] BiocGenerics_0.23.0                     
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.10              bitops_1.0-6             
- [3] tools_3.4.0               zlibbioc_1.21.0          
- [5] statmod_1.4.29            biomaRt_2.31.4           
- [7] digest_0.6.12             RSQLite_1.1-2            
- [9] memoise_1.0.0             rhdf5_2.19.1             
-[11] lattice_0.20-34           Matrix_1.2-8             
-[13] DBI_0.6                   GenomeInfoDbData_0.99.0  
-[15] locfit_1.5-9.1            grid_3.4.0               
-[17] XML_3.98-1.5              Rhtslib_1.7.0            
-[19] Rsamtools_1.27.13         GenomicAlignments_1.11.12
-[21] splines_3.4.0             KernSmooth_2.23-15       
-[23] RCurl_1.95-4.8           
+ [1] Rcpp_0.12.10             compiler_3.4.0           prettyunits_1.0.2       
+ [4] progress_1.1.2           bitops_1.0-6             tools_3.4.0             
+ [7] zlibbioc_1.23.0          statmod_1.4.29           biomaRt_2.33.1          
+[10] digest_0.6.12            RSQLite_1.1-2            memoise_1.1.0           
+[13] rhdf5_2.21.0             lattice_0.20-35          Matrix_1.2-10           
+[16] DBI_0.6-1                GenomeInfoDbData_0.99.0  locfit_1.5-9.1          
+[19] grid_3.4.0               R6_2.2.1                 XML_3.98-1.7            
+[22] magrittr_1.5             Rhtslib_1.9.0            splines_3.4.0           
+[25] Rsamtools_1.29.0         GenomicAlignments_1.13.1 assertthat_0.2.0        
+[28] KernSmooth_2.23-15       RCurl_1.95-4.8          
 \end{Soutput}
 \end{Schunk}
 

@@ -177,6 +177,22 @@ In such cases, it's not clear how to normalize as you can't assume non-DE.
 (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
 This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
 
+\subsection{Thoughts on genomic biases}
+
+\subsubsection{Why we don't bother}
+
+If we're comparing intensities for the same interaction, any genomic biases (or even interaction-specific biases) should mostly cancel out.
+This frees us from the need to model the biases explicitly.
+Pure sequencing biases are relatively easy - you could treat them as factorizable, if you think about the probability of a read landing on a mappable spot.
+However, more complex things need to be considered, including the cut site frequency and the restriction fragment length.
+The former will change the number of ends available for ligation, but not necessarily in a predictable manner unless you assume random ligation for everyone.
+The latter will affect ligation due to steric constraints - again, not predictably unless you create a biophysical polymer model.
+
+If you do have sample-specific genomic biases, you can simply identify the bins that have potential copy number changes.
+This can be done by performing a differential analysis on the counts from \code{marginCounts}.
+Any pairs that involve affected bins can be marked to indicate that caution is required during interpretation.
+This strategy avoids the aforementioned problems and may be preferable when only a few bins are affected.
+
 \subsection{Why iterative correction doesn't get rid of sample-specific biases}
 
 Consider two replicates in which have the same genomic biases.
@@ -224,13 +240,9 @@ Indeed, there is no guarantee that the two offsets do not oppose each other's ef
 Also, biases cannot be computed for some libraries where they have counts of zero.
 Imputation for missing values is \textit{ad hoc} whereby values are set to the average offset (zero, above).
 
-An alternative approach is to simply identify the bins that have potential copy number changes.
-This can be done by performing a differential analysis on the counts from \code{marginCounts}.
-Any pairs that involve affected bins can be marked to indicate that caution is required during interpretation.
-This strategy avoids the aforementioned problems and may be preferable when only a few bins are affected.
+\subsection{Indirectly removing trended biases by normalizing on distance}
 
-A related single-sample approach deserves special mention. 
-Normalization can be performed on the distances between bins in each pair \cite{ay2014} to correct for the drop in interaction frequency with increasing distance between loci. 
+Normalization can also be performed on the distances between bins in each pair \cite{ay2014} to correct for the drop in interaction frequency with increasing distance between loci. 
 As the distance is negatively correlated with abundance, normalization to standardize the former between libraries will also reduce differences in counts with respect to the latter. 
 That said, given the choice, it is preferable to model a weak relative trend between libraries rather than a strong absolute trend for each library.
 This is because any errors in fitting will be smaller in the former. 

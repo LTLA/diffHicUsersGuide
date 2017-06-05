@@ -183,9 +183,9 @@ This also suggests that we should phase-synchronise our cells before doing Hi-C 
 
 If we're comparing intensities for the same interaction, any genomic biases (or even interaction-specific biases) should mostly cancel out.
 This frees us from the need to model the biases explicitly.
-Pure sequencing biases are relatively easy - you could treat them as factorizable, if you think about the probability of a read landing on a mappable spot.
+Pure sequencing biases are relatively easy - you could treat them as factorizable, if you think in terms of the probability of a read landing on a mappable spot.
 However, more complex things need to be considered, including the cut site frequency and the restriction fragment length.
-The former will change the number of ends available for ligation, but not necessarily in a predictable manner unless you assume random ligation for everyone.
+The former will change the number of ends available for ligation, but not necessarily in a predictable manner unless you assume random ligation to make it factorizable (in contrast to defined interaction structures, where the number of extra possibilities for ligation with more ends is constrained).
 The latter will affect ligation due to steric constraints - again, not predictably unless you create a biophysical polymer model.
 
 If you do have sample-specific genomic biases, you can simply identify the bins that have potential copy number changes.

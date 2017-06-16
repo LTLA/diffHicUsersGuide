@@ -473,7 +473,7 @@ input <- c("merged_flox_1.h5", "merged_flox_2.h5", "merged_ko_1.h5", "merged_ko_
 Here, the genome is partitioned into contiguous non-overlapping bins of constant size.
 Each interaction is defined as a pair of these bins.
 This approach avoids the need for prior knowledge of the loci of interest when summarizing Hi-C counts.
-Counting of read pairs between bin pairs can be performed for multiple libraries using the \code{squareCounts} function.
+Counting of read pairs between paired bins is performed for multiple libraries using the \code{squareCounts} function.
 
 <<>>=
 bin.size <- 1e6
@@ -485,10 +485,11 @@ head(anchors(data, type="first"))
 head(anchors(data, type="second"))
 @
 
-This generates an \code{InteractionSet} object that contains count and coordinate information.
-Each row of the count matrix represents the counts for an interaction, while each column represents a library.
-Each interaction is characterized as that between a pair of genomic intervals - in this case, genomic bins.
-The first and second anchor notation is used for these intervals, whereby the first anchor bin is that with the ``higher'' genomic coordinate.
+This generates an \code{InteractionSet} object containing information for multiple genomic interactions \citep{lun2016infrastructure}.
+Each row of the object corresponds to an interaction, i.e., bin pair, while each column represents a library.
+For each interaction, the coordinates of its two ``anchor'' bins are returned.
+The first/second anchor notation is used for these bins, whereby the first anchor bin is that with the ``higher'' genomic coordinate.
+The object also contains a count matrix with the number of read pairs for each interaction in each library.
 
 Bin pairs can also be filtered to remove those with to a count sum below \code{filter}.
 This removes uninformative bin pairs with very few read pairs, and reduces the memory footprint of the function.
@@ -675,6 +676,39 @@ More caution is required if sharp interactions are present, i.e., interactions b
 <<>>=
 new.param <- reform(mm.param, cap=5)
 new.param
+@
+
+\section{Loading counts from existing count matrices}
+It is possible to use counts from existing count matrices, by using coercion methods available to \code{ContactMatrix} objects from the InteractionSet package \cite{lun2016infrastructure}.
+Assume that there are two \code{ContactMatrix} objects (\code{cm1} and \code{cm2}) spanning the same region of the binned interaction space.
+The following code is used to convert these two objects into a single \code{InteractionSet} object.
+Only bin pairs with a count sum greater than 10 are retained, analogous to the output obtained with a \code{squareCounts} call.
+This facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
+
+<<echo=FALSE,results="hide">>=
+# Just for testing.
+N <- 30
+all.starts <- round(runif(N, 1, 100))
+all.ends <- all.starts + round(runif(N, 5, 20))
+all.regions <- GRanges(rep(c("chrA", "chrB"), c(N-10, 10)),
+    IRanges(all.starts, all.ends))
+
+Nr <- 10
+Nc <- 20
+all.anchor1 <- sample(N, Nr)
+all.anchor2 <- sample(N, Nc)
+counts <- matrix(rpois(Nr*Nc, lambda=10), Nr, Nc)
+cm1 <- ContactMatrix(counts, all.anchor1, all.anchor2, all.regions)
+counts <- matrix(rpois(Nr*Nc, lambda=10), Nr, Nc)
+cm2 <- ContactMatrix(counts, all.anchor1, all.anchor2, all.regions)
+@
+
+<<>>=
+to.keep <- as.matrix(cm1) + as.matrix(cm2) >= 10
+iset1 <- deflate(cm1, extract=to.keep)
+iset2 <- deflate(cm2, extract=to.keep)
+data <- cbind(iset1, iset2)
+interactions(data) <- as(interactions(data), "ReverseStrictGInteractions")
 @
 
 \section{Summary}

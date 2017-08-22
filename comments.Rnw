@@ -168,9 +168,11 @@ In general, adjustment is not required to obtain sensible peak calls.
 
 \subsection{When to use scaling normalization}
 
-This may be the least-worst approach when an assumption of a non-DI majority does not apply.
-You'll probably have lots of biases (that are confounded with DIs, so can't be properly removed).
-But at least it's better than normalizing in the wrong direction when you (falsely) assume that a non-DI majority is present.
+Library size normalization may be the least-worst approach when an assumption of a non-DI majority does not apply.
+For most applications, this is reasonable at first glance; there should be no changes in genome composition between conditions, only in the pairing between genomic regions.
+Thus, the library size should be the same between conditions, and any differences should be technical in origin.
+You'll probably have lots of biases due to ligation and cross-linking efficiency differences, which are confounded with DIs and can't be properly removed.
+However, at least it's better than normalizing in the wrong direction when you (incorrectly) assume that a non-DI majority is present.
 
 Some situations include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
 In such cases, it's not clear how to normalize as you can't assume non-DE.

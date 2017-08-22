@@ -250,7 +250,10 @@ That said, given the choice, it is preferable to model a weak relative trend bet
 This is because any errors in fitting will be smaller in the former. 
 Moreover, you'd end up using the distance for normalization in the same way that you're using the abundance. 
 The distance itself has no inherently appealing qualities, it's only its relation to the abundance which is interesting for single-sample analyses. 
+
 For differential analyses, you can use the abundance directly and skip the middleman.
+Admittedly, trended biases might actually represent some biology, e.g., differences in compaction.
+However, we would argue that such differences are uninteresting and should be normalized out, much like total RNA content in RNA-seq.
 
 \subsection{Why use multi-dimensional smoothing?}
 

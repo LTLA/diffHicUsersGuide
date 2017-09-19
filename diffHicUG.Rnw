@@ -117,7 +117,8 @@ fit <- glmQLFit(y, design, robust=TRUE)
 \item testing for significant differences between groups
 <<>>=
 result <- glmQLFTest(fit)
-clusters <- diClusters(data, result$table, target=0.05, cluster.args=list(tol=1))
+clusters <- diClusters(data, result$table, target=0.05, 
+                       cluster.args=list(tol=1))
 @
 \end{enumerate}
 In the various examples for this guide, data will be used from three studies. 
@@ -190,8 +191,8 @@ The fragments to which the reads mapped are referred to as ``anchors'' -- the la
 This process is demonstrated using Hi-C data generated from GM06990 cells.
 
 <<>>=
-diagnostics <- preparePairs("SRR027957.bam", hs.param, 
-    file="SRR027957.h5", dedup=TRUE, minq=10)
+diagnostics <- preparePairs("SRR027957.bam", hs.param, file="SRR027957.h5", 
+                            dedup=TRUE, minq=10)
 diagnostics
 @
 
@@ -239,7 +240,7 @@ Retained read pairs are stored in another index file for later use.
 min.inward <- 1000
 min.outward <- 25000
 prunePairs("SRR027957.h5", hs.param, file.out="SRR027957_trimmed.h5", 
-    max.frag=600, min.inward=min.inward, min.outward=min.outward)
+           max.frag=600, min.inward=min.inward, min.outward=min.outward)
 @
 
 The \Rcode{max.frag} argument removes read pairs where the inferred length of the sequencing fragment (i.e., the ligation product) is greater than a specified value.
@@ -336,7 +337,7 @@ If the dataset is too large, one can save chunks at a time before merging them a
 <<>>=
 anchor1.id <- as.integer(runif(100, 1, length(hs.param$fragments)))
 anchor2.id <- as.integer(runif(100, 1, length(hs.param$fragments)))
-dummy <- data.frame(anchor1.id, anchor2.id, other.data=as.integer(runif(100, 1, 100)))
+dummy <- data.frame(anchor1.id, anchor2.id, other.data=runif(100))
 savePairs(dummy, "example.h5", hs.param)
 @
 
@@ -360,7 +361,8 @@ An example of this approach is shown below, where the SRR027957 library is treat
 
 <<>>=
 seg.frags <- emptyGenome(BSgenome.Hsapiens.UCSC.hg19)
-preparePairs("SRR027957.bam", pairParam(seg.frags), file="SRR027957.h5", dedup=TRUE, minq=10)
+preparePairs("SRR027957.bam", pairParam(seg.frags), 
+             file="SRR027957.h5", dedup=TRUE, minq=10)
 @
 
 Unlike \Rfunction{preparePairs}, no diagnostic information regarding self-circles or dangling ends is reported here.
@@ -412,7 +414,8 @@ Some additional work is required to obtain the restriction fragment coordinates 
 <<>>=
 library(BSgenome.Mmusculus.UCSC.mm10)
 mm.frag <- cutGenome(BSgenome.Mmusculus.UCSC.mm10, "AAGCTT", 4)
-input <- c("merged_flox_1.h5", "merged_flox_2.h5", "merged_ko_1.h5", "merged_ko_2.h5")
+input <- c("merged_flox_1.h5", "merged_flox_2.h5", 
+           "merged_ko_1.h5", "merged_ko_2.h5")
 @
 
 \section{Counting into bin pairs}
@@ -525,7 +528,8 @@ In this case, 100 kbp bins are used.
 probe.loc <- GRanges(c("chr1", "chr2", "chr3"),
     IRanges(c(1e7, 2e7, 3e7), c(1e7, 2e7, 3e7)))
 viewpoints <- resize(probe.loc, fix="center", width=1e5)
-viewdata <- connectCounts(input, mm.param, regions=viewpoints, second.regions=1e5)
+viewdata <- connectCounts(input, mm.param, regions=viewpoints, 
+                          second.regions=1e5)
 head(anchors(viewdata, type="first"))
 head(anchors(viewdata, type="second"))
 @
@@ -880,7 +884,8 @@ Near-diagonal elements should also be removed, as these tend to have high enrich
 All of these steps can be conveniently applied through the \Rfunction{filterPeaks} wrapper function.
 
 <<>>=
-peak.keep <- filterPeaks(data, enrichments, min.enrich=0.5, min.count=5, min.diag=2L)
+peak.keep <- filterPeaks(data, enrichments, min.enrich=0.5, 
+                         min.count=5, min.diag=2L)
 sum(peak.keep)
 @
 
@@ -927,7 +932,8 @@ The example below calculates the percentage of parents that contain a given numb
 neighborhood <- (2*flank.width + 1) * metadata(data)$width
 boxed <- boxPairs(data[peak.keep], reference=neighborhood)
 out <- tabulate(tabulate(boxed$indices[[1]]))
-setNames(round(c(out[1:10], sum(out[11:length(out)]))/sum(out)*100, 1), c(1:10, ">10"))
+out <- c(out[1:10], sum(out[11:length(out)])) # sum all >10
+setNames(round(out/sum(out)*100, 1), c(1:10, ">10"))
 @
 
 Most parents should contain few bin pairs ($\le$ 10, as a rule of thumb), as shown above.
@@ -938,7 +944,8 @@ This suggests that more aggressive filtering on the enrichment score is required
 peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, min.count=5, min.diag=2L)
 boxed <- boxPairs(data[peak.keep2], reference=neighborhood)
 out <- tabulate(tabulate(boxed$indices[[1]]))
-setNames(round(c(out[1:10], sum(out[11:length(out)]))/sum(out)*100, 1), c(1:10, ">10"))
+out <- c(out[1:10], sum(out[11:length(out)])) # sum all >10
+setNames(round(out/sum(out)*100, 1), c(1:10, ">10"))
 @
 
 Obviously, peak calling assumes that changes in intensity of broad interactions are not interesting.
@@ -1117,7 +1124,7 @@ neardiag <- filterDiag(data, by.dist=1.5e6)
 nb.off <- matrix(0, nrow=nrow(data), ncol=ncol(data))
 nb.off[neardiag] <- normOffsets(data[neardiag,], type="loess", se.out=FALSE)
 nb.off[!neardiag] <- normOffsets(data[!neardiag,], type="loess", se.out=FALSE)
-assay(data, "offset") <- nb.off
+assay(data, "offset") <- nb.off # updating offset matrix
 @
 
 We examine the MA plot after adjusting the log-counts with the offsets.
@@ -1251,7 +1258,8 @@ Note that increasing \Rcode{maxk} may be necessary to obtain sufficient accuracy
 
 <<cnvplotter, fig.wide=TRUE, fig.asp=0.5>>=
 before <- cpm(asDGEList(rick.data), log=TRUE)
-after <- log2(assay(rick.data)+0.5) - normalizeCNV(rick.data, rick.marg, maxk=1000)/log(2)
+cnv.offs <- normalizeCNV(rick.data, rick.marg, maxk=1000)
+after <- log2(assay(rick.data)+0.5) - cnv.offs/log(2)
 par(mfrow=c(1,2), cex.axis=1.2, cex.lab=1.4)
 smoothScatter(margin.lr, before[,1]-before[,2], ylim=c(-4, 4), main="Before",
     xlab="Sum of marginal log-ratios", ylab="Interaction log-ratio")
@@ -1436,7 +1444,8 @@ useful.cols <- as.vector(outer(c("seqnames", "start", "end"), 1:2, paste0))
 inter.frame <- as.data.frame(interactions(data))[,useful.cols]
 results.r <- data.frame(inter.frame, result$table, FDR=adj.p)
 o.r <- order(results.r$PValue)
-write.table(results.r[o.r,], file="binpairs.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(results.r[o.r,], file="binpairs.tsv", sep="\t", 
+            quote=FALSE, row.names=FALSE)
 @
 
 This approach is best suited for analyses using large bins, i.e., greater than or equal to 1 Mbp.
@@ -1517,7 +1526,8 @@ These results are saved to file below, along with the coordinates of the minimum
 inter.frame <- as.data.frame(clustered.small$interactions)[,useful.cols]
 results.i <- data.frame(inter.frame, tabcluster)
 o.i <- order(results.i$PValue)
-write.table(results.i[o.i,], file="independent.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(results.i[o.i,], file="independent.tsv", sep="\t", 
+            quote=FALSE, row.names=FALSE)
 @
 
 The statistics can also stored in the metadata of the \Rclass{GInteractions} object returned by \Rfunction{clusterPairs}. 
@@ -1525,7 +1535,7 @@ This ensures that the genomic coordinates and statistics are synchronised.
 
 <<>>=
 mcols(clustered.small$interactions) <- cbind(
-    mcols(clustered.small$interactions), tabcluster)
+        mcols(clustered.small$interactions), tabcluster)
 @
 
 \subsection{Clustering based on significant bin pairs}
@@ -1541,7 +1551,8 @@ Each cluster represents a DI containing only significant bin pairs.
 This is more useful than reporting the coordinates for an entire domain if only a portion of the domain is changing.
 
 <<>>=
-clustered.sig <- diClusters(data, result$table, target=0.05, cluster.args=list(tol=1))
+clustered.sig <- diClusters(data, result$table, target=0.05, 
+                            cluster.args=list(tol=1))
 length(clustered.sig$interactions)
 head(clustered.sig$interactions)
 @
@@ -1578,15 +1589,18 @@ The combined $p$-value from \Rfunction{combineTests} is stored but is only used 
 
 <<>>=
 tabstats <- data.frame(tabcom[,1:4], logFC=tabbest$logFC, FDR=clustered.sig$FDR)
-results.d <- data.frame(as.data.frame(clustered.sig$interactions)[,useful.cols], tabstats)
+results.d <- as.data.frame(clustered.sig$interactions)[,useful.cols]
+results.d <- cbind(results.d, tabstats)
 o.d <- order(results.d$PValue)
-write.table(results.d[o.d,], file="DIclusters.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(results.d[o.d,], file="DIclusters.tsv", sep="\t", 
+            quote=FALSE, row.names=FALSE)
 @
 
 Again, the statistics can stored in the metadata of \Rclass{GInteractions} object.
 
 <<>>=
-mcols(clustered.sig$interactions) <- cbind(mcols(clustered.sig$interactions), tabstats)
+mcols(clustered.sig$interactions) <- cbind(
+    mcols(clustered.sig$interactions), tabstats)
 @
 
 \section{Merging results from different bin widths}
@@ -1600,8 +1614,8 @@ Both \Rfunction{diClusters} and \Rfunction{clusterPairs} accept multiple \Rclass
 <<>>=
 merged.data <- list(data, smaller.data)
 merged.results <- list(result$table, result.small$table)
-clustered.mult <- diClusters(merged.data, merged.results,
-    target=0.05, cluster.args=list(tol=1))
+clustered.mult <- diClusters(merged.data, merged.results, target=0.05, 
+                             cluster.args=list(tol=1))
 length(clustered.mult$interactions)
 @
 
@@ -1638,7 +1652,8 @@ Reordering is performed using the combined $p$-value to promote the strongest ch
 <<>>=
 results.b <- data.frame(as.data.frame(boxed$interactions)[,useful.cols], cons)
 o.b <- order(results.b$PValue)
-write.table(results.b[o.b,], file="boxed.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(results.b[o.b,], file="boxed.tsv", sep="\t", 
+            quote=FALSE, row.names=FALSE)
 @
 
 \section{Reporting nested bin pairs}
@@ -1654,10 +1669,11 @@ best.interactions <- interactions(smaller.data)[inside$best,]
 inter.frame <- as.data.frame(best.interactions)[,useful.cols[-c(1,4)]]
 nested <- data.frame(inter.frame, inside[,c("logFC", "F")])
 head(nested)
-expanded <- rep(NA, nrow(results.b)) # As some parents do not have nested elements.
+expanded <- rep(NA, nrow(results.b)) # For parents with no nested elements.
 expanded[as.integer(rownames(inside))] <- seq_len(nrow(inside))
 results.b <- data.frame(results.b, best=nested[expanded,])
-write.table(results.b[o.b,], file="boxed_best.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(results.b[o.b,], file="boxed_best.tsv", sep="\t", 
+            quote=FALSE, row.names=FALSE)
 @
 
 The above code only reports the top-ranked nested bin pair within each large feature.
@@ -1688,12 +1704,12 @@ cap.ko <- cap.wt*data$totals[3]/data$totals[1]
 # Plotting the WT library.
 par(mfrow=c(1,2))
 plotPlaid(input[1], first=expanded1, second=expanded2, max.count=cap.wt, 
-    width=5e4, param=mm.param, main="Flox")
+          width=5e4, param=mm.param, main="Flox")
 rect(start(chosen.a1), start(chosen.a2), end(chosen.a1), end(chosen.a2))
 
 # Plotting the KO library.
 plotPlaid(input[3], first=expanded1, second=expanded2, max.count=cap.ko, 
-    width=5e4, param=mm.param, main="KO")
+          width=5e4, param=mm.param, main="KO")
 rect(start(chosen.a1), start(chosen.a2), end(chosen.a1), end(chosen.a2))
 @
 
@@ -1737,12 +1753,12 @@ cap.ko <- cap.wt*data$totals[3]/data$totals[1]
 # Plotting the WT sample.
 par(mfrow=c(1,2))
 plotPlaid(input[1], first=expanded1, second=expanded2, max.count=cap.wt, 
-    width=5e4, param=mm.param, main="Flox")
+          width=5e4, param=mm.param, main="Flox")
 rect(start(chosen.a1), start(chosen.a2), end(chosen.a1), end(chosen.a2))
 
 # Plotting the KO sample.
 plotPlaid(input[3], first=expanded1, second=expanded2, max.count=cap.ko, 
-    width=5e4, param=mm.param, main="KO")
+          width=5e4, param=mm.param, main="KO")
 rect(start(chosen.a1), start(chosen.a2), end(chosen.a1), end(chosen.a2))
 @
 
@@ -1774,12 +1790,12 @@ best.gap <- best.mid.a1 - best.mid.a2
 # Plotting the WT sample.
 par(mfrow=c(2,1))
 rotPlaid(input[1], mm.param, region=example, width=2.5e4, 
-    main="Flox", max.count=cap.wt)
+         main="Flox", max.count=cap.wt)
 points(best.mid, best.gap, cex=7) 
 
 # Plotting the KO sample.
 rotPlaid(input[3], mm.param, region=example, width=2.5e4,
-    main="KO", max.count=cap.ko)
+         main="KO", max.count=cap.ko)
 points(best.mid, best.gap, cex=7) 
 @
 
@@ -1969,12 +1985,13 @@ To assist interpretation, users are advised to report the condition-specific dir
 
 <<>>=
 output <- data.frame(as.data.frame(cur.regions)[,1:3],
-    KO=fitdom$coefficients[,"Conditionko"]/log(2),
-    Flox=fitdom$coefficients[,"Conditionflox"]/log(2),
-    resdom$table, FDR=p.adjust(resdom$table$PValue, method="BH"))
+                     KO=fitdom$coefficients[,"Conditionko"]/log(2),
+                     Flox=fitdom$coefficients[,"Conditionflox"]/log(2),
+                     resdom$table)
+output$FDR <- p.adjust(resdom$table$PValue, method="BH")
 o <- order(output$PValue)
 output <- output[o,]
-head(output[,1:5], 10) # test statistics already present above
+head(output[,1:5], 10) # not showing test statistics for brevity
 @
 
 One can also examine whether the absolute values of the directionalities increase or decrease between conditions.

@@ -1,86 +1,49 @@
-\documentclass[12pt]{report}
-\usepackage{fancyvrb,graphicx,natbib,url,comment,import,bm}
-\usepackage{tikz}
-\usepackage[hidelinks]{hyperref}
+\documentclass{report}
 
-% Margins
-\topmargin -0.1in
-\headheight 0in
-\headsep 0in
-\oddsidemargin -0.1in
-\evensidemargin -0.1in
-\textwidth 6.5in
-\textheight 8.9in
+<<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
+BiocStyle::latex(relative.path=TRUE)
+@
 
-% Sweave options
-\usepackage{Sweave}
-\SweaveOpts{keep.source=TRUE,prefix.string=plots-ug/ug,png=TRUE,pdf=FALSE}
+\bioctitle[\Biocpkg{diffHic} User's Guide]{\Biocpkg{diffHic}: Differential analysis of Hi-C data \\ User's Guide}
+%% also: \bioctitle{Title used for both header and title page}
+%% or... \title{Title used for both header and title page}
+\author[1]{Aaron T. L. Lun}
+\affil[1]{The Walter and Eliza Hall Institute of Medical Research, Melbourne, Australia}
 
-\DefineVerbatimEnvironment{Sinput}{Verbatim}{fontshape=sl,fontsize=\footnotesize}
-\DefineVerbatimEnvironment{Soutput}{Verbatim}{fontsize=\footnotesize}
-\DefineVerbatimEnvironment{Scode}{Verbatim}{fontsize=\footnotesize}
-%\fvset{listparameters={\setlength{\topsep}{0pt}}}
-\renewenvironment{Schunk}{\vspace{0pt}}{\vspace{0pt}}
-
-\DefineVerbatimEnvironment{Rcode}{Verbatim}{fontsize=\footnotesize}
-\newcommand{\edgeR}{edgeR}
-\newcommand{\csaw}{csaw}
-\newcommand{\pkgname}{diffHic}
-\newcommand{\code}[1]{{\small\texttt{#1}}}
-\newcommand{\R}{\textsf{R}}
-
-% Defining a comment box.
 \usepackage{framed,color}
-\definecolor{shadecolor}{rgb}{0.9, 0.9, 0.9}
 \newenvironment{combox}
-{ \begin{shaded}\begin{center}\begin{minipage}[t]{0.95\textwidth} }
-{ \end{minipage}\end{center}\end{shaded} }
+{ \definecolor{shadecolor}{RGB}{255, 240, 240} \begin{shaded}\begin{center}\begin{minipage}[t]{0.95\textwidth} }
+{ \end{minipage}\end{center}\end{shaded} \definecolor{shadecolor}{RGB}{240,240,240} }
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\title{\pkgname{}: Differential analysis of Hi-C data \\ \vspace{0.2in} User's Guide}
-\author{Aaron Lun}
-
-% Set to change date for document, not compile date.
-\date{First edition 12 December 2012\\
-\vspace{6pt}
-Last revised 28 April 2017}
-
-% Removing the bibliography title so it shows up in the contents.
-\makeatletter
-\renewenvironment{thebibliography}[1]{%
-%     \section*{\refname}%
-%      \@mkboth{\MakeUppercase\refname}{\MakeUppercase\refname}%
-      \list{\@biblabel{\@arabic\c@enumiv}}%
-           {\settowidth\labelwidth{\@biblabel{#1}}%
-            \leftmargin\labelwidth
-            \advance\leftmargin\labelsep
-            \@openbib@code
-            \usecounter{enumiv}%
-            \let\p@enumiv\@empty
-            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
-      \sloppy
-      \clubpenalty4000
-      \@clubpenalty \clubpenalty
-      \widowpenalty4000%
-      \sfcode`\.\@m}
-     {\def\@noitemerr
-       {\@latex@warning{Empty `thebibliography' environment}}%
-      \endlist}
-\makeatother
+\usepackage{bibentry}
+\nobibliography*
 
 \begin{document}
 \maketitle
-\tableofcontents
+            
+\begin{abstract}
+This document contains instructions on how to use \Biocpkg{diffHic} for differential interaction analyses of Hi-C data.
+It covers counting of read pairs into bin pairs, filtering out low-abundance bin pairs, normalization of sample-specific trended biases, 
+variance modelling and hypothesis testing, and summarization and visualization of bin pairs.
 
-<<results=hide,echo=FALSE>>=
-picdir <- "plots-ug"
+\vspace{0.05in}
+\textit{First edition:} 12 December 2012 \\
+\textit{Last revised:} 19 September 2017 \\
+\textit{Last compiled:} \Sexpr{format(Sys.Date(), "%d %B %Y")}
+\end{abstract}
+
+\packageVersion{\Sexpr{BiocStyle::pkg_ver("diffHic")}}
+
+\tableofcontents
+\newpage
+
+<<results="hide",echo=FALSE>>=
+picdir <- "plots-ug/"
 if (file.exists(picdir)) { unlink(picdir, recursive=TRUE) }
 dir.create(picdir)
+knitr::opts_chunk$set(error=FALSE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(fig.path=picdir)
 @
-
-\newpage
 
 \chapter{Introduction}
 \section{Scope}
@@ -191,7 +154,7 @@ The ligation signature in each chimeric read is identified with cutadapt \citep{
 Each segment is then aligned separately to the reference genome using Bowtie2 \citep{langmead2012bowtie}.
 Mapping by read splitting can be performed in \pkgname{} using a custom Python script, below.
 
-<<results=hide>>=
+<<results='hide'>>=
 system.file("python", "presplit_map.py", package="diffHic", mustWork=TRUE)
 @
 
@@ -294,7 +257,7 @@ hist(diags$length[diags$length < 1000], ylab="Frequency", xlab="Spacing (bp)")
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<fraglenhist>>
 @
 \end{center}
@@ -353,7 +316,7 @@ legend("topright", c("inward", "outward", "same"),
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<strorient>>
 @
 \end{center}
@@ -429,7 +392,7 @@ The sequence around the ligation junction is not well-defined when DNase~I is us
 Instead, alignment programs should be used that can directly handle chimeric reads with arbitrary breakpoints in the genome, e.g., BWA \citep{li2010fast}.
 A Python script for iterative mapping \citep{imakaev2012iterative} is also provided for this purpose.
 
-<<results=hide>>=
+<<results='hide'>>=
 system.file("python", "iter_map.py", package="diffHic", mustWork=TRUE)
 @
 
@@ -534,7 +497,7 @@ library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 gene.body <- genes(TxDb.Mmusculus.UCSC.mm10.knownGene)
 @
 
-<<echo=FALSE,results=hide>>=
+<<echo=FALSE,results='hide'>>=
 strand(gene.body) <- "*"
 @
 
@@ -615,7 +578,7 @@ smoothScatter(0.5*(adjc[,1]+adjc[,3]), adjc[,1]-adjc[,3],
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<mamargin>>
 @
 \end{center}
@@ -751,7 +714,7 @@ hist(ave.ab, xlab="Average abundance")
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<avehistplot>>
 @
 \end{center}
@@ -871,7 +834,7 @@ lines(trended$log.distance[o], trended$threshold[o], col="red", lwd=2)
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<avedistplot>>
 @
 \end{center}
@@ -970,7 +933,7 @@ Red boxes mark the bin pairs retained by filtering, where each side represents a
 In both examples, the bin pairs correspond nicely to punctate high-intensity contacts in the interaction space.
 
 \begin{center}
-<<fig=TRUE,echo=FALSE,height=6,width=10>>=
+<<echo=FALSE,fig.height=6,fig.width=10>>=
 #keep2 <- peak.keep & !is.na(dist)
 #which(keep2)[order(enrichments[keep2], decreasing=TRUE)][1:100]
 #plotPlaid(input[3], param=mm.param, width=2e5, cap=20, 
@@ -1172,7 +1135,7 @@ lines(ab[o], fit$fitted[o], col="red")
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<maunnorm>>
 <<makema>>
 @
@@ -1216,7 +1179,7 @@ adj.counts <- log2(assay(data) + 0.5) - nb.off/log(2)
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<manorm>>
 <<makema>>
 @
@@ -1369,7 +1332,7 @@ smoothScatter(margin.lr, after[,1]-after[,2], ylim=c(-4, 4), main="After",
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE,width=10,height=5>>=
+<<echo=FALSE,fig.width=10,fig.height=5>>=
 <<cnvplotter>>
 @
 \end{center}
@@ -1450,7 +1413,7 @@ plotBCV(y)
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<bcvplot>>
 @
 \end{center}
@@ -1482,7 +1445,7 @@ plotQLDisp(fit)
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<qlplot>>
 @
 \end{center}
@@ -1837,7 +1800,7 @@ cap.ko <- cap.wt*data$totals[3]/data$totals[1]
 <<plaid3>>
 @
 
-<<results=hide,echo=FALSE>>=
+<<results='hide',echo=FALSE>>=
 <<setup>>
 if (as.character(seqnames(chosen.a1))!="chr11" || start(chosen.a1)!=30001298 || end(chosen.a1)!=31000010 ||
     as.character(seqnames(chosen.a2))!="chr11" || start(chosen.a2)!=29000942 || end(chosen.a2)!=30001301) {
@@ -1852,10 +1815,10 @@ The actual bin pair occurs at the center of the plot and is marked by a rectangl
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<plaid1>>
 @
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<plaid3>>
 @
 \end{center}
@@ -1905,7 +1868,7 @@ cap.ko <- cap.wt*data$totals[3]/data$totals[1]
 <<plaid3b>>
 @
 
-<<results=hide,echo=FALSE>>=
+<<results='hide',echo=FALSE>>=
 <<setup2>>
 if (as.character(seqnames(chosen.a1))!="chr3" || start(chosen.a1)!=151001261 || end(chosen.a1)!=152002835 ||
     as.character(seqnames(chosen.a2))!="chr3" || start(chosen.a2)!=145998892 || end(chosen.a2)!=147005847) {
@@ -1915,10 +1878,10 @@ if (as.character(seqnames(chosen.a1))!="chr3" || start(chosen.a1)!=151001261 || 
 
 \setkeys{Gin}{width=0.48\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<plaid1b>>
 @
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<plaid3b>>
 @
 \end{center}
@@ -1954,7 +1917,7 @@ best.mid <- (best.mid.a1 + best.mid.a2)/2
 best.gap <- best.mid.a1 - best.mid.a2
 @
 
-<<echo=FALSE,results=hide>>=
+<<echo=FALSE,results='hide'>>=
 .chosen.a1 <- anchors(boxed$interactions[chosen], type="first")
 .chosen.a2 <- anchors(boxed$interactions[chosen], type="second")
 if (as.character(seqnames(.chosen.a1))!="chr2" || start(.chosen.a1)!=136998216 || end(.chosen.a1)!=138001392 ||
@@ -1971,11 +1934,11 @@ if (as.character(seqnames(.chosen.a1))!="chr2" || start(.chosen.a1)!=136998216 |
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<echo=FALSE,fig.width=10,fig.height=6,resolution=100>>=
 <<rot1>>
 @ 
 \\
-<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<echo=FALSE,fig.width=10,fig.height=6,resolution=100>>=
 <<rot2>>
 @
 \end{center}
@@ -2003,13 +1966,13 @@ colfun <- plotDI(data, result$table$logFC, expanded1, expanded2, diag=FALSE)
 
 \setkeys{Gin}{width=0.5\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE>>=
+<<echo=FALSE>>=
 <<diplot>>
 @
 \end{center}
 \setkeys{Gin}{width=0.8\textwidth}
 
-<<results=hide,echo=FALSE>>=
+<<results='hide',echo=FALSE>>=
 if (as.character(seqnames(chosen.a1))!="chr16" || start(chosen.a1)!=70000341 || end(chosen.a1)!=70999295 ||
     as.character(seqnames(chosen.a2))!="chr16" || start(chosen.a2)!=65999261 || end(chosen.a2)!=67001066) {
 	warning("first DI plot hits the wrong spot")
@@ -2036,7 +1999,7 @@ mtext("logFC", side=1, line=3, cex=1.4)
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE,width=10, height=3>>=
+<<echo=FALSE,fig.width=10, fig.height=3>>=
 <<colorbar>>
 @
 \end{center}
@@ -2153,7 +2116,7 @@ plotBCV(ydom)
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<bcvdomplot>>
 @
 \end{center}
@@ -2168,7 +2131,7 @@ plotQLDisp(fitdom)
 
 \setkeys{Gin}{width=0.6\textwidth}
 \begin{center}
-<<echo=FALSE,fig=TRUE>>=
+<<echo=FALSE>>=
 <<qldomplot>>
 @
 \end{center}
@@ -2228,7 +2191,7 @@ tophit <- cur.regions[o[1]]
 expanded <- resize(tophit, fix="center", width=width(tophit)*10)
 @
 
-<<results=hide,echo=FALSE>>=
+<<results='hide',echo=FALSE>>=
 if (as.character(seqnames(tophit))!="chr2" || start(tophit)!=48799546 || end(tophit)!=48901284) {
 	warning("first domain change hits the wrong spot")
 }
@@ -2242,11 +2205,11 @@ if (as.character(seqnames(tophit))!="chr2" || start(tophit)!=48799546 || end(top
 
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<echo=FALSE,fig.width=10,fig.height=6,resolution=100>>=
 <<dom1>>
 @ 
 \\
-<<fig=TRUE,echo=FALSE,width=10,height=6,resolution=100>>=
+<<echo=FALSE,fig.width=10,fig.height=6,resolution=100>>=
 <<dom2>>
 @
 \end{center}
@@ -2283,7 +2246,7 @@ Scripts for alignment and processing of these libraries can be accessed with the
 These scripts assume that the relevant Sequence Read Archive files have been downloaded.
 Some software packages are also required - read \code{sra2bam.sh} for more details.
 
-<<results=hide>>=
+<<results='hide'>>=
 system.file('doc', 'sra2bam.sh', package="diffHic")
 system.file('doc', 'bam2hdf.R', package="diffHic")
 @

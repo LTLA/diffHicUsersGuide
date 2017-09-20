@@ -1074,7 +1074,8 @@ In \Biocpkg{edgeR}, scaling is performed using the effective library size, defin
 Library size normalization is thus achieved by setting all normalization factors to unity.
 
 <<>>=
-libsize.facs <- rep(1, ncol(data))
+data.lib <- data # Making a copy to avoid side-effects.
+data.lib$norm.factors <- 1
 @
 
 Alternatively, TMM normalization \cite{oshlack2010tmm} can be applied on the counts for the bin pairs.
@@ -1082,15 +1083,8 @@ This accounts for composition biases by assuming that most interactions do not c
 Here, the normalization factors differ from unity as the library size alone is not sufficient to describe the bias in each sample.
 
 <<>>=
-tmm.facs <- normOffsets(data)
-tmm.facs
-@
-
-The normalization factors can be stored in the \Rcode{colData} of the \Rclass{InteractionSet} object.
-This simplifies data management by avoiding the need to keep track of separate objects.
-
-<<>>=
-data$norm.factors <- libsize.facs
+data.tmm <- normOffsets(data, se.out=TRUE)
+data.tmm$norm.factors 
 @
 
 In practice, scaling methods are usually too simplistic.
@@ -1099,12 +1093,12 @@ More sophisticated approaches are necessary to handle the complex biases observe
 \section{Removing trended biases between libraries}
 
 \subsection{Using non-linear normalization}
-Trended biases can be generated from uncontrolled differences in library preparation. 
-This is particularly problematic for Hi-C data, given the complexity of the protocol. 
+Trended biases may be observed in Hi-C data, caused by uncontrolled differences in sample preparation in a complex protocol.
 Changes in cross-linking efficiency or ligation specificity can lead to a systematic redistribution of read pairs throughout the interaction space. 
 For example, reduced specificity may result in more counts for weak non-specific interactions, and fewer counts for strong genuine interactions.
 Such biases may manifest as an abundance-dependent trend in a MA plot between libraries.
-The example below compares one library from each group, which can be repeated for each pair of libraries -- especially between replicates, where the trend must be technical in origin.
+This is especially true for a trend observed between replicates, which must be technical in origin.
+The code below generates a MA plot comparing one library from each group, which can be repeated for each pair of libraries.
 
 <<echo=FALSE,eval=FALSE,label=maunnorm>>=
 ab <- aveLogCPM(asDGEList(data))
@@ -1119,23 +1113,23 @@ fit <- loessFit(x=ab, y=mval)
 lines(ab[o], fit$fitted[o], col="red")
 @
 
-<<unnormmaplot>>=
+<<unnormmaplot, fig.asp=1>>=
 <<maunnorm>>
 <<makema>>
 @
 
 Trended biases are problematic as they can inflate the variance estimates or fold-changes for some bin pairs. 
 They must be eliminated with non-linear normalization prior to further analysis.
-We use loess normalization with the \Rfunction{normOffsets} function from the \Biocpkg{csaw} package \cite{lun2016csaw}, adapted from existing non-linear methods to handle discrete count data. 
+We use LOESS normalization with the \Rfunction{normOffsets} function from the \Biocpkg{csaw} package \cite{lun2016csaw}, adapted from existing non-linear methods to handle discrete count data. 
 
 <<>>=
 data <- normOffsets(data, type="loess", se.out=TRUE)
 @
 
 This function computes an offset term for each bin pair in each library.
-When fitting a generalized linear model (GLM), a large offset for a count is equivalent to downscaling that count relative to the counts of other libraries. 
-The matrix of offsets is of the same dimension as the count matrix and is stored as an element of the \Rcode{assays} slot of the \Rclass{InteractionSet} object.
-(Setting \Rcode{se.out=FALSE} returns the offset matrix directly, instead of a modified \Rclass{InteractionSet} object containing the offsets.)
+When fitting a generalized linear model (GLM) to the counts for a particular bin pair, a large offset for a library is equivalent to downscaling the corresponding count relative to the counts of other libraries. 
+The matrix of offsets has the same dimensions as the count matrix and is stored as an element of the \Rcode{assays} slot of the \Rclass{InteractionSet} object.
+(Specifying \Rcode{se.out=FALSE} returns the offset matrix directly, instead of a modified \Rclass{InteractionSet} containing the offsets.)
 
 <<>>=
 nb.off <- assay(data, "offset")
@@ -1152,7 +1146,7 @@ neardiag <- filterDiag(data, by.dist=1.5e6)
 nb.off <- matrix(0, nrow=nrow(data), ncol=ncol(data))
 nb.off[neardiag] <- normOffsets(data[neardiag,], type="loess", se.out=FALSE)
 nb.off[!neardiag] <- normOffsets(data[!neardiag,], type="loess", se.out=FALSE)
-assay(data, "offset") <- nb.off # updating offset matrix
+assay(data, "offset") <- nb.off # updating the offset matrix
 @
 
 We examine the MA plot after adjusting the log-counts with the offsets.
@@ -1162,7 +1156,7 @@ Most of the trend is removed, indicating that non-linear normalization was succe
 adj.counts <- log2(assay(data) + 0.5) - nb.off/log(2)
 @
 
-<<normmaplot>>=
+<<normmaplot, fig.asp=1>>=
 <<manorm>>
 <<makema>>
 @
@@ -1177,13 +1171,13 @@ Non-linear normalization also assumes that the majority of bin pairs at each abu
 Any systematic differences between libraries are assumed to be technical in origin and are removed.
 If this assumption does not hold, genuine differences may be lost upon normalization.
 For example, a global increase in the compaction of the genome would manifest as an upward trend in the MA plot, as low-abundance distal interactions are weakened in favor of high-abundance short-range interactions.
-In such cases, the simpler scaling strategies described in Section~\ref{sec:simplenorm} may be more appropriate.
+In such cases, use of library size normalization in Section~\ref{sec:simplenorm} may be more appropriate.
 
 \section{Iterative correction of interaction intensities}
 \label{sec:itercor}
-While this is not the intended function of the \Biocpkg{diffHic} package, a method is also provided for the removal of biases between genomic regions.
-The \Rfunction{correctedContact} function performs iterative correction \cite{imakaev2012iterative} with some modifications.
-Briefly, if multiple libraries are used to generate the \Rcode{data} object, then correction is performed using the overall NB mean for each bin pair.
+While this is not the intended purpose of the \Biocpkg{diffHic} package, a method is also provided for the removal of biases between genomic regions.
+The \Rfunction{correctedContact} function performs iterative correction of the interaction space \cite{imakaev2012iterative} with some modifications.
+Namely, if multiple libraries are used to present, correction is performed using the overall NB mean for each bin pair, rather than on the counts themselves.
 Winsorizing through \Rcode{winsor.high} is also performed to mitigate the impact of high-abundance bin pairs.
 
 <<>>=
@@ -1230,9 +1224,9 @@ In short, normalization within a library is a different problem from normalizati
 
 \subsection{Eliminating CNVs with multi-dimensional smoothing}
 Copy number variations (CNVs) in the interacting regions will also affect the interaction intensity. 
-These CNV-driven differences in intensities are generally uninteresting and must be removed to avoid spurious detection.
-This is done using the \Rfunction{normalizeCNV} function, based on multi-dimensional smoothing across several covariates with the \CRANpkg{locfit} package \cite{loader1999local}.
-It requires both bin pair and marginal counts, obtained with the same values of \Rcode{width} and \Rcode{param} in \Rfunction{squareCounts} and \Rfunction{marginCounts}, respectively.
+These CNV-driven differences in intensities are generally uninteresting and must be removed to avoid spurious detection of DIs.
+Normalization of CNV-based biases is achieved using the \Rfunction{normalizeCNV} function, which performs  multi-dimensional smoothing across several covariates with the \CRANpkg{locfit} package \cite{loader1999local}.
+It requires both bin pair and marginal counts, obtained with the same \Rcode{width} and \Rcode{param} in calls to \Rfunction{squareCounts} and \Rfunction{marginCounts}.
 
 <<>>=
 cnv.offs <- normalizeCNV(data, margin.data)
@@ -1242,7 +1236,6 @@ head(cnv.offs)
 Three covariates are defined for each bin pair.
 For a pair of libraries, the ratio of marginal counts for each bin can be used as a proxy for the relative CNV between libraries in that bin.
 Each bin pair will be associated with two of these marginal log-ratios to use as covariates.
-Note that the marginal counts should be collected with the same parameters as the interaction counts.
 The third covariate for each bin pair is that of the average abundance across all libraries.
 This will account for any abundance-dependent trends in the biases.
 
@@ -1268,21 +1261,23 @@ rick.marg <- marginCounts(count.files, hs.param, width=1e6)
 rick.data <- rick.data[aveLogCPM(asDGEList(rick.data)) > 0,]
 @
 
-The aim is to plot the log-ratio of the interaction counts of each bin pair, as a function of the marginal log-ratios of the corresponding bins.
-This will illustrate the effect of the CNV on the interaction intensities between the two libraries.
-As two marginal log-ratios are present for each bin pair, these are added together for simplicity.
+Our aim is to plot the log-ratio of the counts for each bin pair between the first two libraries, as a function of the log-ratio of the marginal counts of the corresponding bins.
+The code below computes the marginal log-ratios after matching the bins in \Robject{rick.marg} to the bin pairs in \Robject{rick.data} with \Rfunction{matchMargins}.
+As two marginal log-ratios are present for each bin pair, these are added together to simplify visualization.
 
 <<>>=
-matched <- matchMargins(rick.data, rick.marg)
 m.adjc <- cpm(asDGEList(rick.marg), log=TRUE)
-sum.madjc <- m.adjc[matched$anchor1,] + m.adjc[matched$anchor2,]
-margin.lr <- sum.madjc[,1] - sum.madjc[,2]
+margin.lr <- m.adjc[,1] - m.adjc[,2]
+matched <- matchMargins(rick.data, rick.marg)
+margin.lr <- margin.lr[matched$anchor1] + margin.lr[matched$anchor2]
 @
 
-We generate some diagnostic plots to determine the effect of \Rfunction{normalizeCNV}.
-The presence of a trend indicates that decreases in copy number result in decreases in interaction intensity.
+We generate plots before and after subtracting the offsets computed by \Rfunction{normalizeCNV}.
+Before normalization, we observe that a decrease in copy number results in a decrease in interaction intensity.
+This is expected given that fewer copies should result in fewer chances for interaction.
 After normalization, the trend in the interaction log-ratios is removed.
-Note that increasing \Rcode{maxk} may be necessary to obtain sufficient accuracy in the internal call to \CRANpkg{locfit}.
+This indicates that the CNV effect has been eliminated and can be ignored in downstream analyses.
+Note that increasing \Rcode{maxk} may be necessary to obtain accurate results in the internal call to \CRANpkg{locfit}.
 
 <<cnvplotter, fig.wide=TRUE, fig.asp=0.5>>=
 before <- cpm(asDGEList(rick.data), log=TRUE)

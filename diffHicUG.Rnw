@@ -444,16 +444,25 @@ bin.size <- 1e6
 mm.param <- pairParam(mm.frag)
 data <- squareCounts(input, mm.param, width=bin.size, filter=1)
 data
-head(assay(data))
-head(anchors(data, type="first"))
-head(anchors(data, type="second"))
 @
 
 This generates an \Rclass{InteractionSet} object containing information for multiple genomic interactions \cite{lun2016infrastructure}.
 Each row of the object corresponds to an interaction, i.e., bin pair, while each column represents a library.
 For each interaction, the coordinates of its two ``anchor'' bins are returned.
 The first/second anchor notation is used for these bins, whereby the first anchor bin is that with the ``higher'' genomic coordinate.
-The object also contains a count matrix with the number of read pairs for each interaction in each library.
+
+<<>>=
+head(anchors(data, type="first"))
+head(anchors(data, type="second"))
+@
+
+The returned \Rclass{InteractionSet} object contains a count matrix with the number of read pairs for each interaction in each library.
+It also contains a \Rcode{totals} vector in the \Rcode{colData}, which stores the total number of read pairs for each library.
+
+<<>>=
+head(assay(data))
+data$totals
+@
 
 Bin pairs can also be filtered to remove those with to a count sum below \Rcode{filter}.
 This removes uninformative bin pairs with very few read pairs, and reduces the memory footprint of the function.
@@ -501,7 +510,7 @@ strand(gene.body) <- "*" # Removing strand info, for simplicity.
 
 Counting is directly performed for these defined regions using the \Rfunction{connectCounts} function.
 Interactions are defined between each pair of regions in the pre-specified set.
-This may be easier to interpret than pairs of bins as the interacting regions have some biological significance.
+This may be easier to interpret than pairs of bins if the interacting regions have some biological significance.
 The count matrix and the vector of totals are defined as previously described.
 
 <<>>=
@@ -554,7 +563,7 @@ This approach avoids loading irrelevant interactions when only specific viewpoin
 \section{Counting into single bins}
 \label{sec:marginal}
 The \Rfunction{marginalCounts} function counts the number of reads mapped inside each bin.
-This effectively treats each Hi-C library as single-end data, to quantify the genomic coverage of each bin.
+This effectively treats each Hi-C library as single-end data to quantify the genomic coverage of each bin.
 One can use these ``marginal'' counts to determine whether there are systematic differences in coverage between libraries for a given bin.
 This implies that copy number variations are present, which may confound detection of differential interactions.
 
@@ -565,7 +574,7 @@ margin.data
 
 Each row of the \Rclass{RangedSummarizedExperiment} contains the marginal read counts for a genomic bin.
 For this dataset, there are no major changes in coverage for the vast majority of bins.
-The most extreme events occur at low abundances and are unlikely to be reliable.
+The most extreme events occur at low abundances and are unlikely to be precise. 
 This suggests that a direct comparison of interaction intensities will be valid.
 Remedial action in the presence of copy number changes is not trivial and will be discussed in Section~\ref{sec:copy}.
 
@@ -580,9 +589,9 @@ smoothScatter(0.5*(adjc[,1]+adjc[,3]), adjc[,1]-adjc[,3],
 \subsection{Restricting the input chromosomes}
 \label{sec:restrictchr}
 
-Users can elect to restrict counting to particular chromosomes, by setting a value for the \Rcode{restrict} slot in the \Rclass{pairParam} object.
+Users can restrict counting to particular chromosomes by setting the \Rcode{restrict} slot in the \Rclass{pairParam} object.
 This is useful to ensure that only interactions between relevant chromosomes are loaded.
-Sequences such as the mitochondrial genome, unassigned contigs or random chromosome segments can be ignored.
+Sequences such as the mitochondrial genome, unassigned contigs or random chromosome segments can be ignored in routine analyses.
 
 <<>>=
 new.param <- reform(mm.param, restrict=c("chr1", "chr2"))
@@ -599,7 +608,7 @@ new.param
 @
 
 \subsection{Specifying regions to ignore}
-Users can also choose to discard alignments that lie within blacklisted regions, using the \Rcode{discard} slot.
+Users can also discard alignments that lie within blacklisted regions by setting the \Rcode{discard} slot.
 The aim is to eliminate reads within known repeat regions.
 Such regions are problematic, as reads from several repeat units in the real genome may be collated into a single representative unit in the genome build.
 This results in a sharp, spurious spike in interaction intensity.
@@ -637,7 +646,6 @@ It is possible to use counts from existing count matrices, by using coercion met
 Assume that there are two \Rclass{ContactMatrix} objects (\Robject{cm1} and \Robject{cm2}) spanning the same region of the binned interaction space.
 The code below is used to convert these two objects into a single \Rclass{InteractionSet} object for use in the \Biocpkg{diffHic} analysis pipeline.
 Only bin pairs with a count sum greater than 10 are retained, analogous to the output obtained with a \Rfunction{squareCounts} call with \Rcode{filter=10}.
-This procedure facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
 
 <<echo=FALSE,results="hide">>=
 # Just for testing.
@@ -664,6 +672,9 @@ iset2 <- deflate(cm2, extract=to.keep)
 data <- cbind(iset1, iset2)
 interactions(data) <- as(interactions(data), "ReverseStrictGInteractions")
 @
+
+This procedure facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
+It is easily extended to datasets involving more than two samples, by simply considering additional objects when constructing \Robject{tokeep} and \Robject{data}.
 
 \section{Summary}
 Counting into bin pairs is the most general method for quantifying interaction intensity.

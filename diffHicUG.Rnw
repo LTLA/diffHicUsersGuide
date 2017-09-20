@@ -69,7 +69,7 @@ The Hi-C protocol \cite{lieberman2009comprehensive} is used to study chromatin o
 Briefly, chromatin is cross-linked and digested with a restriction enzyme.
 This releases chromatin complexes into solution, where each complex contains multiple restriction fragments corresponding to interacting loci.
 Overhangs are filled in with biotin-labelled nucleotides to form blunt ends.
-Proximity ligation is then performed, which favours ligation between blunt ends in the same complex.
+Proximity ligation is then performed, which favors ligation between blunt ends in the same complex.
 The ligated DNA is sonicated and the sheared fragments containing ligation junctions are purified by a streptavidin pulldown.
 Paired-end sequencing is performed on the purified ligation products, and pairs of interacting loci are identified by mapping the paired reads.
 Of course, some caution is required due to the presence of non-specific ligation between blunt ends in different complexes.
@@ -773,22 +773,24 @@ The procedure above assumes that no additional filtering has been performed duri
 Any pre-filtering that removes low-abundance bin pairs will inflate the median and lead to overestimation of the filter threshold. 
 However, it may not be practical to load counts without pre-filtering.
 For example, at small bin sizes, too many non-empty bin pairs may be present to fit into memory.
+Counts that are too small will also yield imprecise estimates of the background ligation rate.
 
-To overcome this, counts are loaded for larger bin sizes without pre-filtering.
+To overcome this, counts are loaded for a larger bin size without pre-filtering.
 This reduces memory usage as the interaction space is partitioned into fewer bin pairs.
-The filter threshold is computed from the larger bin pairs, and then converted into a corresponding value for the original (smaller) bin sizes.
-To illustrate, imagine that a bin size of 100 kbp is actually of interest, but filter thresholds can only be efficiently computed with 1 Mbp bins.
-The first task is to load the counts for the smaller bin pairs, using a reasonably large \Rcode{filter} to avoid excessive memory consumption.
+The filter threshold is estimated from the inter-chromosomal interactions as previously described, exploiting the presence of large counts for large bin sizes to achieve precise estimates.
+The estimated threshold for the larger bin pairs is then converted into a corresponding threshold for the original (smaller) bin pairs, after adjusting for the differences in bin sizes.
+
+To illustrate, imagine that a bin size of 100 kbp is of interest.
+We load the counts for the smaller bin pairs, using a reasonably large \Rcode{filter} to avoid excessive memory consumption.
 
 <<>>=
 new.bin.size <- 1e5
 smaller.data <- squareCounts(input, mm.param, width=new.bin.size, filter=20)
 @
 
-Direct filtering of these smaller bin pairs can be performed using \Rfunction{filterDirect}, with assistance from their larger counterparts.
-Counts for the 1 Mbp bin pairs are supplied as the \Rcode{reference} parameter and are used to estimate the filter threshold.
-This threshold is adjusted for differences in size between the smaller and larger bins.
-The final value can then be used to directly filter on the abundances of the smaller bin pairs.
+Direct filtering of these smaller bin pairs is performed using \Rfunction{filterDirect}, using the larger (1 Mbp) bin pairs to estimate the filter threshold.
+This is done by passing the unfiltered counts for the larger bin pairs in \Robject{data} as the \Rcode{reference} parameter.
+The returned statistics can then be used to directly filter the smaller bin pairs.
 Here, a minimum 5-fold change over the threshold is required for the retention of each 100 Mbp bin pair.
 
 <<>>=
@@ -801,7 +803,7 @@ summary(small.keep)
 \section{Filtering as a function of interaction distance}
 
 \subsection{Computing the threshold directly from the bin pair counts}
-A more complex filter adjusts the threshold according to the distance between the bins in each bin pair. 
+A more complex filter involves adjusting the threshold according to the distance between the bins in each bin pair. 
 In typical Hi-C datasets, larger counts are observed at lower interaction distances.
 This is probably driven by non-specific compaction of chromatin into a 3D ``globule'' conformation.
 If such compaction is uninteresting, a concomitantly higher threshold is necessary to offset the increase in counts for these local interactions \cite{lin2012global}.
@@ -950,7 +952,8 @@ Another diagnostic is based on the sparsity of putative peaks.
 Bin pairs nested within larger ``parent'' bin pairs are identified using the \Rfunction{boxPairs} function.
 Most of these parents should contain low numbers of nested bin pairs.
 This is because each peak, by definition, should be isolated in its neighborhood.
-The example below calculates the percentage of parents that contain a given number (from 1 to 10, or higher) of nested bin pairs.
+The example below considers parent bin pairs of size equal to the neighborhood used to compute the enrichment values,
+and calculates the percentage of parents that contain a given number (from 1 to 10, or higher) of nested bin pairs.
 
 <<>>=
 neighborhood <- (2*flank.width + 1) * metadata(data)$width
@@ -965,7 +968,8 @@ In the second example below, a larger proportion of parents with many nested bin
 This suggests that more aggressive filtering on the enrichment score is required.
 
 <<>>=
-peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, min.count=5, min.diag=2L)
+peak.keep2 <- filterPeaks(data, enrichments, min.enrich=0, 
+                          min.count=5, min.diag=2L)
 boxed <- boxPairs(data[peak.keep2], reference=neighborhood)
 out <- tabulate(tabulate(boxed$indices[[1]]))
 out <- c(out[1:10], sum(out[11:length(out)])) # sum all >10
@@ -975,7 +979,7 @@ setNames(round(out/sum(out)*100, 1), c(1:10, ">10"))
 Obviously, peak calling assumes that changes in intensity of broad interactions are not interesting.
 This may not be appropriate for every study.
 Indeed, the definition of ``broad'' depends on the bin size, whereby a peak called at large bin sizes may be discarded at smaller sizes.
-Users should try out the other general filters before proceeding to peak calling, to check that potentially interesting differences are not discarded by the latter.
+Users should try out the other, more general filters before proceeding to peak calling, to check that potentially interesting differences are not discarded by the latter.
 
 \subsection{Efficient peak calling at high resolution}
 The \Rfunction{enrichedPairs} function requires that all bin pairs are loaded into memory, i.e., with \Rcode{filter=1} during \Rfunction{squareCounts}.

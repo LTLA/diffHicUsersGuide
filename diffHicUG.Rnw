@@ -1314,9 +1314,9 @@ It can also consider extra-Poisson variability between biological replicates of 
 Here, biological replicates refer to Hi-C libraries prepared from independent biological samples.
 
 The magnitude of biological variability is empirically determined from these biological replicates.
-Specifically, variability is modelled in \Biocpkg{edgeR} by estimating the NB dispersion parameter.
+In \Biocpkg{edgeR}, variability is modelled by estimating the dispersion parameter of the NB distribution.
 This is used during testing to reduce the significance of any detected differences when the counts are highly variable.
-Similarly, estimation of the quasi-likelihood (QL) dispersion can be performed to account for heteroskedasticity \cite{lund2012ql}. 
+Similarly, estimation of the quasi-likelihood (QL) dispersion can be performed to model variability of the dispersions \cite{lund2012ql}. 
 
 Dispersion estimation requires the fitting of a GLM to the counts for each bin pair \cite{mccarthy2012glm}. 
 To do so, a design matrix must be specified to describe the experimental setup.
@@ -1333,9 +1333,9 @@ design
 Obviously, more complex designs can be used if necessary.
 This includes designs with blocking factors for batch effects, pairing between samples or multiple groups.
 
-The \Rclass{InteractionSet} object is also converted into a \Rclass{DGEList} object for analysis with \Biocpkg{edgeR}.
-If the normalization factors or offsets are already stored in certain fields of \Robject{data}, as previously described, then they will be automatically extracted and used by \Rfunction{asDGEList}.
-Alternatively, they can be passed to \Rfunction{asDGEList} explicitly.
+The \Rclass{InteractionSet} object also needs to be converted into a \Rclass{DGEList} object for analysis with \Biocpkg{edgeR}.
+If the normalization factors or offsets are already stored in \Robject{data}, as previously described, then they will be automatically extracted by the \Rfunction{asDGEList} function and stored in the output \Rclass{DGEList}.
+Alternatively, they can be passed explicitly to \Rfunction{asDGEList}.
 Note that the offset matrix will take precedence over scaling factors in \Biocpkg{edgeR} analyses.
 
 <<>>=
@@ -1368,8 +1368,8 @@ For example, a cluster of outliers indicates that there may be copy number chang
 \section{Estimating the QL dispersion}
 The QL dispersion for each bin pair is estimated from the deviance of the fitted GLM.
 This may seem superfluous given that the NB dispersion already accounts for biological variability.
-However, the QL dispersion can account for heteroskedasticity between bin pairs, whereas the NB dispersion cannot.
-Estimation of the former is performed with the \Rfunction{glmQLFit} function.
+However, it is mathematically easier to model variability in the QL dispersions across bin pairs, compared to variability in the NB dispersions.
+GLM fitting and estimation of the QL dispersion for each bin pair are performed with the \Rfunction{glmQLFit} function.
 
 <<>>=
 fit <- glmQLFit(y, design, robust=TRUE)
@@ -1394,7 +1394,7 @@ summary(fit$df.prior)
 @
 
 It is important to use the \Rcode{robust=TRUE} argument in \Rfunction{glmQLFit} \cite{phipson2016robust}.
-This protects against any large positive outliers corresponding to highly variable counts.
+This protects the EB shrinkage against large positive outliers corresponding to highly variable counts.
 It also protects against large negative outliers.
 These are formed from near-zero deviances when counts are identical, and are not uncommon when counts are low.
 Both types of outliers inflate the apparent variability and decrease the estimated prior degrees of freedom.

@@ -1949,8 +1949,8 @@ ydom <- DGEList(all.counts, lib.size=rep(totals, 2))
 @
 
 As an aside, the same counts can be used to compute the directionality index \cite{dixon2012topological}. 
-A Gaussian HMM can then be fitted to explicitly define domain boundaries, using packages like depmixS4 in \R{}.
-However, this analysis is largely outside the scope of \Biocpkg{diffHic} and will not be discussed in detail here.
+A Gaussian HMM can then be fitted to explicitly define domain boundaries, using packages like \CRANpkg{depmixS4}.
+However, this analysis is largely outside the scope of \Biocpkg{diffHic} and will not be discussed here.
 
 \section{Constructing the design matrix}
 A design matrix is constructed with condition-specific coefficients for the log-fold change between up- and downstream counts.
@@ -1968,7 +1968,7 @@ design <- model.matrix(~0 + Sample + Direction:Condition)
 
 Some further manipulation is performed to clean up the design matrix prior to downstream analysis.
 Redundant coefficients that cause linear dependencies are removed, and the remaining columns are given simpler names.
-For convenience, the condition-specific up/down log-fold changes will be referred to as directionality values in the text below.
+For convenience, the condition-specific up/down log-fold changes will be referred to as directionality statistics in the text below.
 
 <<>>=
 design <- design[,!grepl("DirectionDown", colnames(design))]
@@ -1977,7 +1977,7 @@ design
 @
 
 \section{Pre-processing of the count data}
-Filtering is performed to remove low-abundance bins, which do not contain enough counts to reject the null hypothesis.
+Filtering is performed to remove low-abundance bins that do not contain enough counts to reject the null hypothesis.
 In general, this should have little effect as most of the counts should be very large.
 This is because \Rfunction{domainDirections} effectively counts read pairs for highly local interactions (as the up- or downstream intervals are adjacent to each bin).
 
@@ -2015,7 +2015,7 @@ fitdom <- glmQLFit(ydom, design, robust=TRUE)
 plotQLDisp(fitdom)
 @
 
-The aim of the differential analysis is to identify bins where the directionality values change between conditions.
+The aim of the differential analysis is to identify bins where the directionality statistics change between conditions.
 The \Rfunction{makeContrasts} function is used to construct an appropriate contrast vector, and the QL F-test is applied to detect significant differences.
 
 <<>>=
@@ -2025,9 +2025,9 @@ topTags(resdom)
 @
 
 The interpretation of these changes requires some care.
-If the directionality was positive in the WT cells, a positive \Rcode{logFC} would represent a strengthening of the domain boundary.
-However, if the WT directionality was negative, a positive \Rcode{logFC} would represent a weakening of the domain boundary or a reversal of the domain orientation.
-To assist interpretation, users are advised to report the condition-specific directionality values in the output.
+If the directionality statistic was positive in the WT cells, a positive \Rcode{logFC} would represent a strengthening of the domain boundary.
+However, if it was negative, a positive \Rcode{logFC} would represent a weakening of the domain boundary or a reversal of the domain orientation.
+To assist interpretation, users are advised to report the condition-specific directionality statistics in the output.
 
 <<>>=
 output <- data.frame(as.data.frame(cur.regions)[,1:3],
@@ -2040,7 +2040,7 @@ output <- output[o,]
 head(output[,1:5], 10) # not showing test statistics for brevity
 @
 
-One can also examine whether the absolute values of the directionalities increase or decrease between conditions.
+Users can also examine whether the absolute values of the directionalities increase or decrease between conditions.
 This provides an indication of whether the domains become more or less well-defined.
 Here, domain definition seems to weaken in the KO condition.
 

@@ -1417,7 +1417,7 @@ The \Robject{bin.size} and \Robject{mm.param} objects are required from Chapter~
 
 \section{Using the quasi-likelihood F-test}
 The \Rfunction{glmQLFTest} function performs a QL F-test for each bin pair to identify significant differences.
-Users should check that the contrast has been specified correctly through the \Rcode{coef} or \Rcode{contrast} arguments.
+Users should ensure that the correct contrast is performed by explicitly specifying the \Rcode{coef} or \Rcode{contrast} arguments.
 In this case, the coefficient of interest refers to the change in the KO counts over the WT counts.
 The null hypothesis for each bin pair is that the coefficient is equal to zero, i.e., there is no change between the WT and KO groups.
 
@@ -1448,8 +1448,8 @@ This provides a suitable comprimise between specificity and sensitivity.
 In contrast, traditional methods of correction (e.g., Bonferroni) are often too conservative.
 
 Interpretation of the differential interactions (DIs) is complicated by spatial dependencies between adjacent bin pairs.
-If many adjacent bin pairs were separately reported as DIs, this would lead to unnecessary redundancy in the results.
-To mitigate this effect, \Biocpkg{diffHic} provides several methods for controlling the FDR.
+If many adjacent bin pairs were separately reported as DIs, this would complicate the interpretation of the results by introducing unnecessary redundancy.
+To mitigate this effect, \Biocpkg{diffHic} provides several methods for clustering bin pairs and controlling the relevant FDR.
 Each of these methods is described below, along with its relative strengths and weaknesses.
 For routine analyses, the approach based on clustering significiant bin pairs is recommended -- see Section~\ref{sec:sigclust} for details.
 
@@ -1457,7 +1457,7 @@ For routine analyses, the approach based on clustering significiant bin pairs is
 The simplest approach is to directly apply the BH method to the set of $p$-values for all tested bin pairs.
 The FDR here refers to the proportion of detected bin pairs that are false positives.
 DIs are defined as those bin pairs detected at a given FDR threshold, e.g., 5\%.
-Their coordinates can be saved to file along with the bin pair-based test statistics.
+Their coordinates are saved to file along with the bin pair-based test statistics.
 Resorting on $p$-value is performed to prioritize strong DIs, thus simplifying inspection of the results.
 
 <<>>=
@@ -1472,8 +1472,8 @@ write.table(results.r[o.r,], file="binpairs.tsv", sep="\t",
 @
 
 This approach is best suited for analyses using large bins, i.e., greater than or equal to 1 Mbp.
-Here, adjacent bin pairs need not be considered redundant as they cover substantially different (in absolute terms) areas of the interaction space.
-Thus, no clustering is required.
+Here, adjacent bin pairs need not be considered redundant as they cover distinct areas of the interaction space.
+Thus, no clustering is required to simplify interpretation.
 
 \subsection{Clustering to reduce redundancy in the results}
 Adjacent bin pairs can be aggregated into larger clusters to reduce redundancy in the results.
@@ -1586,17 +1586,18 @@ Additional sophistication can be obtained by setting \Rcode{fc.col="logFC"} abov
 This will cluster bin pairs separately if they are changing in opposite directions.
 
 The \Rfunction{diClusters} function will attempt to control the cluster-level FDR below \Rcode{target}, i.e., 5\%.
-Specifically, the cluster-level FDR is estimated from the bin pair-level FDR threshold used to define significant windows (see the \Rfunction{clusterFDR} function in the \Biocpkg{csaw} package).
+Specifically, the cluster-level FDR is estimated from the FDR threshold used to define significant bin pairs (see the \Rfunction{clusterFDR} function in the \Biocpkg{csaw} package).
 The bin pair-level threshold is then adjusted until the estimate of the cluster-level FDR lies close to \Rcode{target}.
 The estimated cluster-level FDR is stored in the \Rcode{FDR} field of the output.
-This procedure is not statistically rigorous and will yield biased estimates for small numbers of clusters.
+Formally speaking, this procedure is not entirely rigorous and will yield biased estimates for small numbers of clusters.
 However, this may be a necessary price to pay for interpretable results.
 
 <<>>=
 clustered.sig$FDR
 @
 
-Additional details on the bin pairs in each cluster can be obtained using the \Rfunction{combineTests} and \Rfunction{getBestTest} functions in \Biocpkg{csaw}.
+The identities of the bin pairs in each cluster are also returned in the \Rcode{indices} field of the output list.
+These can be used to compute additional statistics for each cluster using the \Rfunction{combineTests} and \Rfunction{getBestTest} functions in \Biocpkg{csaw}.
 The latter will identify the bin pair with the lowest $p$-value, which is useful for finding the strongest changes in large clusters.
 Users are advised to ignore the $p$-value and FDR fields as these assume independent clustering.
 
@@ -1628,18 +1629,19 @@ mcols(clustered.sig$interactions) <- cbind(
 
 \section{Merging results from different bin widths}
 \label{sec:mergebins}
+
+\subsection{Clustering with different bin widths}
 The optimal choice of bin size is not clear when there are both sharp and diffuse changes in the interaction space.
 Smaller bins provide greater spatial resolution and can identify sharp DIs that would be lost within larger bin pairs.
 Conversely, larger bin pairs have larger counts and greater power to detect diffuse DIs.
 Comprehensive detection of DIs can be achieved by combining analyses from several bin sizes.
-Both \Rfunction{diClusters} and \Rfunction{clusterPairs} accept multiple \Rclass{InteractionSet} objects to cluster results of analyses with different sizes.
+For example, \Rfunction{clusterPairs} accepts multiple \Rclass{InteractionSet} objects to cluster results of analyses with different sizes.
 
 <<>>=
-merged.data <- list(data, smaller.data)
-merged.results <- list(result$table, result.small$table)
-clustered.mult <- diClusters(merged.data, merged.results, target=0.05, 
-                             cluster.args=list(tol=1))
-length(clustered.mult$interactions)
+clustered.mult <- clusterPairs(larger=data, smaller=smaller.data, 
+                               tol=1, upper=1e6)
+head(clustered.mult$indices$larger)
+head(clustered.mult$indices$smaller)
 @
 
 Alternatively, the \Rfunction{boxPairs} function can be used to identify all smaller bin pairs that are nested within each of the larger ``parent'' bin pairs.
@@ -1654,14 +1656,15 @@ head(boxed$indices$larger)
 head(boxed$indices$smaller)
 @
 
+\subsection{Computing consolidated cluster-level statistics}
 Regardless of whether \Rfunction{clusterPairs} or \Rfunction{boxPairs} is used, the statistics for each cluster can be computed with the \Rfunction{consolidatePairs} function.
 This uses a weighted version of Simes' method to ensure each analysis contributes equally to the significance of each cluster \cite{benjamini1997multiple}.
 For each bin pair, the weight of its $p$-value is inversely proportional to the number of bin pairs of the same size in the same cluster. 
 This ensures that the combined $p$-value calculation for each cluster is not dominated by smaller, more numerous bin pairs.
-(Similarly, \Rfunction{diClusters} uses a frequency-weighted version of the FDR to ensure an equal contribution from each bin size when defining significant bin pairs.)
 The BH method is then applied to the combined $p$-values to control the cluster-level FDR.
 
 <<>>=
+merged.results <- list(result$table, result.small$table)
 cons <- consolidatePairs(boxed$indices, merged.results)
 head(cons)
 sum(cons$FDR <= 0.05)
@@ -1678,6 +1681,26 @@ o.b <- order(results.b$PValue)
 write.table(results.b[o.b,], file="boxed.tsv", sep="\t", 
             quote=FALSE, row.names=FALSE)
 @
+
+\subsection{Clustering significant bin pairs of different widths}
+The \Rfunction{diClusters} function will also accept multiple \Rclass{InteractionSet} objects in the form of a list.
+It will simply pass the arguments to \Rfunction{clusterPairs} and control the cluster-level FDR as described in Section~\ref{sec:sigclust}.
+It will also use a frequency-weighted version of the FDR to ensure an equal contribution from each bin size when defining significant bin pairs.
+
+<<>>=
+merged.data <- list(data, smaller.data)
+clustered.mult <- diClusters(merged.data, merged.results, target=0.05, 
+                             cluster.args=list(tol=1))
+length(clustered.mult$interactions)
+@
+
+The output is also directly compatible with \Rfunction{consolidatePairs}.
+Again, users should ignore the $p$-values when clustering based on significant bin pairs. 
+
+<<>>=
+cons.sig <- consolidatePairs(clustered.mult$indices, merged.results)
+@
+
 
 \section{Reporting nested bin pairs}
 \label{sec:nesting}
@@ -1708,8 +1731,8 @@ Any interesting nested changes can then be interactively identified for a given 
 \label{chap:plaid}
 
 \subsection{Using conventional plaid plots}
-Plaid plots can be used to visualize the distribution of read pairs in the interaction space \cite{lieberman2009comprehensive}. 
-Briefly, each axis is a chromosome segment. 
+Plaid plots are widely used to visualize the distribution of read pairs in the interaction space \cite{lieberman2009comprehensive}. 
+In these plots, each axis is a chromosome segment. 
 Each ``pixel'' represents an interaction between the corresponding intervals on each axis. 
 The color of the pixel is proportional to the number of read pairs mapped between the interacting loci.
 We demonstrate below using large bin pairs detected in the consolidated analysis with small nested bin pairs.

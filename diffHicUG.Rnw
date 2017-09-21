@@ -669,12 +669,14 @@ cm2 <- ContactMatrix(counts, all.anchor1, all.anchor2, all.regions)
 to.keep <- as.matrix(cm1) + as.matrix(cm2) >= 10
 iset1 <- deflate(cm1, extract=to.keep)
 iset2 <- deflate(cm2, extract=to.keep)
-data <- cbind(iset1, iset2)
-interactions(data) <- as(interactions(data), "ReverseStrictGInteractions")
+data.com <- cbind(iset1, iset2)
+interactions(data.com) <- as(interactions(data.com), 
+                             "ReverseStrictGInteractions")
+data.com$totals <- c(sum(as.matrix(cm1)), sum(as.matrix(cm2)))
 @
 
 This procedure facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
-It is easily extended to datasets involving more than two samples, by simply considering additional objects when constructing \Robject{tokeep} and \Robject{data}.
+It is easily extended to datasets involving more than two samples, by simply considering additional objects when constructing \Robject{tokeep}, \Robject{data.com} and \Rcode{totals}.
 
 \section{Summary}
 Counting into bin pairs is the most general method for quantifying interaction intensity.

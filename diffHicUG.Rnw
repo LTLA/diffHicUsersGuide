@@ -42,7 +42,7 @@ picdir <- "plots-ug/"
 if (file.exists(picdir)) { unlink(picdir, recursive=TRUE) }
 dir.create(picdir)
 knitr::opts_chunk$set(error=FALSE, warning=FALSE, message=FALSE)
-knitr::opts_chunk$set(fig.path=picdir, eval=FALSE)
+knitr::opts_chunk$set(fig.path=picdir)
 @
 
 \chapter{Introduction}

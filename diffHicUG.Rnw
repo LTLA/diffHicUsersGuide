@@ -1525,7 +1525,7 @@ This may be satisfactory when the interaction space is sparse such that the clus
 To demonstrate, a quick-and-dirty differential analysis is performed using counts for the 100 kbp bin pairs.
 
 <<>>=
-smaller.data <- normalize(smaller.data, type="loess")
+smaller.data <- normOffsets(smaller.data, type="loess", se.out=TRUE)
 y.small <- asDGEList(smaller.data)
 y.small <- estimateDisp(y.small, design)
 fit.small <- glmQLFit(y.small, design, robust=TRUE)
@@ -2060,9 +2060,9 @@ Each rotated plaid plot shows the surrounding interaction space, with the region
 tophit <- cur.regions[o[1]]
 expanded <- resize(tophit, fix="center", width=width(tophit)*10)
 
+par(mfrow=c(2,1))
 rotPlaid(input[1], mm.param, region=expanded, width=2.5e4, main="Flox")
 segments(start(tophit), 0, end(tophit), 0, col="red", lwd=10)
-
 rotPlaid(input[3], mm.param, region=expanded, width=2.5e4, main="KO")
 segments(start(tophit), 0, end(tophit), 0, col="red", lwd=10)
 @

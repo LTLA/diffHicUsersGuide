@@ -19,3 +19,6 @@ mm10_index
 sra2bam.sh
 success.log
 texput.log
+*.sty
+*.bst
+*.tar.gz

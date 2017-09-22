@@ -2094,20 +2094,17 @@ We killed him and ate his pork.
 \section{Data sources}
 All datasets are publicly available from the NCBI Gene Expression Omnibus (GEO).
 The K562/GM06990 dataset \cite{lieberman2009comprehensive} was obtained using the GEO accession number GSE18199.
-The neural stem cell data set \cite{sofueva2013cohesin} was obtained using the GEO accession GSE49017.
-Finally, the RWPE1 dataset  \cite{rickman2012oncogene} was obtained with the accession GSE37752.
+The neural stem cell data set \cite{sofueva2013cohesin} was obtained using the accession GSE49017.
+Finally, the RWPE1 dataset  \cite{rickman2012oncogene} was obtained using the accession GSE37752.
 All libraries were processed as described in Chapter~\ref{chap:prep}.
 For some datasets, multiple technical replicates are available for each library.
 These were merged together prior to read pair counting.
 
-Scripts for alignment and processing of these libraries can be accessed with the commands below.
-These scripts assume that the relevant Sequence Read Archive files have been downloaded.
-Some software packages are also required - read \file{sra2bam.sh} for more details.
+All libraries were downloaded in the Sequence Read Archive format (SRA).
+The SRA files were aligned to the reference genome using the \file{sra2bam.sh} script at \url{https://github.com/LTLA/diffHicUsersGuide}.
+Some software packages are also required to run this script, such as various tools from the \software{Picard} suite -- read the source code in \file{sra2bam.sh} for more details.
+The resulting BAM files were then converted into index files using the \file{bam2hdf.R} script.
 
-<<results='hide'>>=
-system.file('doc', 'sra2bam.sh', package="diffHic")
-system.file('doc', 'bam2hdf.R', package="diffHic")
-@
 
 \section{Session information}
 <<>>=

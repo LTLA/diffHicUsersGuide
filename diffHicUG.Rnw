@@ -42,7 +42,7 @@ picdir <- "plots-ug/"
 if (file.exists(picdir)) { unlink(picdir, recursive=TRUE) }
 dir.create(picdir)
 knitr::opts_chunk$set(error=FALSE, warning=FALSE, message=FALSE)
-knitr::opts_chunk$set(fig.path=picdir)
+knitr::opts_chunk$set(fig.path=picdir, dev='png', dpi=150)
 @
 
 \chapter{Introduction}
@@ -260,9 +260,10 @@ Excessively large lengths are indicative of off-site cleavage, i.e., where the r
 While not completely uninformative, these are discarded as they are not expected from the Hi-C protocol.
 The threshold value can be chosen based on the size selection interval in library preparation, or by examining the distribution of inferred fragment lengths from \Rfunction{getPairData}.
 
-<<fraglenhist>>=
+<<fraglenhist, fig.small=TRUE>>=
 diags <- getPairData("SRR027957.h5", hs.param)
-hist(diags$length[diags$length < 1000], ylab="Frequency", xlab="Spacing (bp)")
+hist(diags$length[diags$length < 1000], ylab="Frequency", 
+     xlab="Spacing (bp)", main="", col="grey80")
 @
 
 The insert size is defined as the linear distance between two paired reads on the same chromosome.
@@ -292,7 +293,7 @@ This is consistent with random ligation between two separate restriction fragmen
 At lower insert sizes, spikes are observed in the ouward- and inward-facing distributions due to self-circularization and dangling ends, respectively.
 Thresholds should be chosen in \Rfunction{prunePairs} to remove these spikes, as represented by the grey lines.
 
-<<strorient, fig.asp=1>>=
+<<strorient, fig.small=TRUE>>=
 # Constructing the histograms for each orientation.
 llinsert <- log2(diags$insert + 1L)
 intra <- !is.na(llinsert)
@@ -578,7 +579,7 @@ The most extreme events occur at low abundances and are unlikely to be precise.
 This suggests that a direct comparison of interaction intensities will be valid.
 Remedial action in the presence of copy number changes is not trivial and will be discussed in Section~\ref{sec:copy}.
 
-<<mamargin, fig.asp=1>>=
+<<mamargin, fig.small=TRUE>>=
 adjc <- cpm(asDGEList(margin.data), log=TRUE, prior.count=5)
 smoothScatter(0.5*(adjc[,1]+adjc[,3]), adjc[,1]-adjc[,3],
     xlab="A", ylab="M", main="Flox (1) vs. Ko (1)")
@@ -710,10 +711,10 @@ Assume that the counts for each bin pair are sampled from the negative binomial 
 In this model, the overall NB mean across all libraries is (probably) an independent filter statistic.
 The log-mean-per-million is known as the average abundance and can be computed with the \Rfunction{aveLogCPM} function in \Biocpkg{edgeR} \cite{mccarthy2012glm}.
 
-<<avehistplot>>=
+<<avehistplot, fig.small=TRUE>>=
 library(edgeR)
 ave.ab <- aveLogCPM(asDGEList(data))
-hist(ave.ab, xlab="Average abundance")
+hist(ave.ab, xlab="Average abundance", col="grey80", main="")
 @
 
 Any bin pair with an average abundance less than a specified threshold value will be discarded.
@@ -823,7 +824,7 @@ The effect of this strategy can be visualized by plotting the interaction distan
 A power-law relationship between distance and abundance is usually observed in Hi-C data \cite{lieberman2009comprehensive}. 
 The average abundance (and thus, the filter threshold) decreases as the distance between the interacting loci increases.
 
-<<avedistplot>>=
+<<avedistplot, fig.small=TRUE>>=
 smoothScatter(trended$log.distance, trended$abundances, 
     xlab="Log-Distance", ylab="Normalized abundance")
 o <- order(trended$log.distance)
@@ -1115,7 +1116,7 @@ fit <- loessFit(x=ab, y=mval)
 lines(ab[o], fit$fitted[o], col="red")
 @
 
-<<unnormmaplot, fig.asp=1>>=
+<<unnormmaplot, fig.small=TRUE>>=
 <<maunnorm>>
 <<makema>>
 @
@@ -1158,7 +1159,7 @@ Most of the trend is removed, indicating that non-linear normalization was succe
 adj.counts <- log2(assay(data) + 0.5) - nb.off/log(2)
 @
 
-<<normmaplot, fig.asp=1>>=
+<<normmaplot, fig.small=TRUE>>=
 <<manorm>>
 <<makema>>
 @
@@ -1358,7 +1359,7 @@ A more sophisticated strategy is also used whereby an abundance-dependent trend 
 This should manifest as a smooth trend in the NB dispersion estimates with respect to the average abundances of all bin pairs.
 The aim is to improve modelling accuracy by empirically modelling any non-NB mean-variance relationships.
 
-<<bcvplot>>=
+<<bcvplot, fig.small=TRUE>>=
 plotBCV(y)
 @
 
@@ -1382,7 +1383,7 @@ Instead, information is shared between bin pairs using an empirical Bayes (EB) a
 Per-bin-pair QL estimates are shrunk towards a common trend across all bin pairs.
 This stabilizes the QL dispersion estimates and improves precision for downstream applications.
 
-<<qlplot>>=
+<<qlplot, fig.small=TRUE>>=
 plotQLDisp(fit)
 @
 
@@ -1825,7 +1826,7 @@ Some more effort is also required in interpretation.
 In the example below, each colored box represents an interaction between two bins. 
 The coordinates of each interacting bin can be identified by extending lines from opposite sides of the box until they intersect the $x$-axis.
 
-<<rotplot, fig.wide=TRUE, fig.asp=1.2>>=
+<<rotplot, fig.asp=1.2>>=
 # Setting up the interaction space to be plotted.
 chosen <- o.b[4]
 example <- anchors(boxed$interactions[chosen], type="second")
@@ -1867,7 +1868,7 @@ Visualization of the changes is useful as it highlights the DIs, whereas convent
 The latter features may be constant between libraries and, thus, not of any particular interest.
 The log-fold changes also incorporate normalization information, which is difficult to represent on a count-based plaid plot.
 
-<<diplot,fig.asp=1>>=
+<<diplot, fig.small=TRUE>>=
 chosen <- o.r[5]
 chosen.a1 <- anchors(data[chosen], type="first")
 chosen.a2 <- anchors(data[chosen], type="second")
@@ -1893,7 +1894,7 @@ Both \Rfunction{rotDI} and \Rfunction{plotDI} will invisibly return another func
 This can be used to generate a custom color bar, as shown below.
 A similar function that maps counts to colors is also returned by \Rfunction{plotPlaid} and \Rfunction{rotPlaid}.
 
-<<label=colorbar,fig.asp=0.3>>=
+<<colorbar,fig.asp=0.3>>=
 logfc <- -20:20/10
 plot(0,0,type="n", axes=FALSE, xlab="", ylab="", xlim=range(logfc), ylim=c(0,1))
 rect(logfc - 0.05, 0, logfc + 0.05, 1, col=colfun(logfc), border=NA)
@@ -2005,14 +2006,14 @@ This means that any biases between the up- and downstream counts within each lib
 The analysis proceeds directly to dispersion estimation and GLM fitting.
 The mean-dependent trend in the NB dispersions is modelled using \Rfunction{estimateDisp} as previously described.
 
-<<bcvdomplot>>=
+<<bcvdomplot, fig.small=TRUE>>=
 ydom <- estimateDisp(ydom, design)
 plotBCV(ydom)
 @
 
 A GLM is fitted to the counts for each bin using the specified model and the trended NB dispersion, and QL dispersions are estimated for all bins using robust EB shrinkage.
 
-<<qldomplot>>=
+<<qldomplot, fig.small=TRUE>>=
 fitdom <- glmQLFit(ydom, design, robust=TRUE)
 plotQLDisp(fitdom)
 @
@@ -2056,7 +2057,7 @@ summary(change.type[is.sig])
 Finally, the region with the top change in directionality is visualized.
 Each rotated plaid plot shows the surrounding interaction space, with the region itself highlighted in red.
 
-<<domplot, fig.wide=TRUE, fig.asp=1.2>>=
+<<domplot, fig.asp=1.2>>=
 tophit <- cur.regions[o[1]]
 expanded <- resize(tophit, fix="center", width=width(tophit)*10)
 

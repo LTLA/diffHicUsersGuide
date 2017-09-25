@@ -55,7 +55,7 @@ variance modelling and hypothesis testing, and summarization and visualization o
 \vspace{0.05in}
 \textit{First edition:} 12 December 2012 \\
 \textit{Last revised:} 19 September 2017 \\
-\textit{Last compiled:} 22 September 2017
+\textit{Last compiled:} 25 September 2017
 \end{abstract}
 
 \packageVersion{diffHic 1.9.6}
@@ -453,7 +453,7 @@ Thresholds should be chosen in \Rfunction{prunePairs} to remove these spikes, as
 \hlkwd{legend}\hlstd{(}\hlstr{"topright"}\hlstd{,} \hlkwd{c}\hlstd{(}\hlstr{"inward"}\hlstd{,} \hlstr{"outward"}\hlstd{,} \hlstr{"same"}\hlstd{),}
     \hlkwc{col}\hlstd{=}\hlkwd{c}\hlstd{(}\hlstr{"darkgreen"}\hlstd{,} \hlstr{"red"}\hlstd{,} \hlstr{"blue"}\hlstd{),} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/strorient-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -920,7 +920,7 @@ Remedial action in the presence of copy number changes is not trivial and will b
 \hlkwd{smoothScatter}\hlstd{(}\hlnum{0.5}\hlopt{*}\hlstd{(adjc[,}\hlnum{1}\hlstd{]}\hlopt{+}\hlstd{adjc[,}\hlnum{3}\hlstd{]), adjc[,}\hlnum{1}\hlstd{]}\hlopt{-}\hlstd{adjc[,}\hlnum{3}\hlstd{],}
     \hlkwc{xlab}\hlstd{=}\hlstr{"A"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"M"}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{"Flox (1) vs. Ko (1)"}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/mamargin-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -1638,7 +1638,7 @@ The code below generates a MA plot comparing one library from each group, which 
 \hlstd{fit} \hlkwb{<-} \hlkwd{loessFit}\hlstd{(}\hlkwc{x}\hlstd{=ab,} \hlkwc{y}\hlstd{=mval)}
 \hlkwd{lines}\hlstd{(ab[o], fit}\hlopt{$}\hlstd{fitted[o],} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/unnormmaplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -1708,7 +1708,7 @@ Most of the trend is removed, indicating that non-linear normalization was succe
 \hlstd{fit} \hlkwb{<-} \hlkwd{loessFit}\hlstd{(}\hlkwc{x}\hlstd{=ab,} \hlkwc{y}\hlstd{=mval)}
 \hlkwd{lines}\hlstd{(ab[o], fit}\hlopt{$}\hlstd{fitted[o],} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/normmaplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -1991,7 +1991,7 @@ The aim is to improve modelling accuracy by empirically modelling any non-NB mea
 \begin{alltt}
 \hlkwd{plotBCV}\hlstd{(y)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/bcvplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -2024,7 +2024,7 @@ This stabilizes the QL dispersion estimates and improves precision for downstrea
 \begin{alltt}
 \hlkwd{plotQLDisp}\hlstd{(fit)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/qlplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -2720,7 +2720,7 @@ The coordinates of each interacting bin can be identified by extending lines fro
          \hlkwc{main}\hlstd{=}\hlstr{"KO"}\hlstd{,} \hlkwc{max.count}\hlstd{=cap.ko)}
 \hlkwd{points}\hlstd{(best.mid, best.gap,} \hlkwc{cex}\hlstd{=}\hlnum{7}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{0mm}{-\fltoffset}
+\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
 \includegraphics[width=\maxwidth]{plots-ug/rotplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -2747,7 +2747,7 @@ The log-fold changes also incorporate normalization information, which is diffic
 \hlstd{expanded2} \hlkwb{<-} \hlkwd{resize}\hlstd{(chosen.a2,} \hlkwc{fix}\hlstd{=}\hlstr{"center"}\hlstd{,} \hlkwc{width}\hlstd{=}\hlnum{5e7}\hlstd{)}
 \hlstd{colfun} \hlkwb{<-} \hlkwd{plotDI}\hlstd{(data, result}\hlopt{$}\hlstd{table}\hlopt{$}\hlstd{logFC, expanded1, expanded2,} \hlkwc{diag}\hlstd{=}\hlnum{FALSE}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/diplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -3051,7 +3051,7 @@ Each rotated plaid plot shows the surrounding interaction space, with the region
 \hlkwd{rotPlaid}\hlstd{(input[}\hlnum{3}\hlstd{], mm.param,} \hlkwc{region}\hlstd{=expanded,} \hlkwc{width}\hlstd{=}\hlnum{2.5e4}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{"KO"}\hlstd{)}
 \hlkwd{segments}\hlstd{(}\hlkwd{start}\hlstd{(tophit),} \hlnum{0}\hlstd{,} \hlkwd{end}\hlstd{(tophit),} \hlnum{0}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{10}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{0mm}{-\fltoffset}
+\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
 \includegraphics[width=\maxwidth]{plots-ug/domplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -3078,24 +3078,17 @@ We killed him and ate his pork.
 \section{Data sources}
 All datasets are publicly available from the NCBI Gene Expression Omnibus (GEO).
 The K562/GM06990 dataset \cite{lieberman2009comprehensive} was obtained using the GEO accession number GSE18199.
-The neural stem cell data set \cite{sofueva2013cohesin} was obtained using the GEO accession GSE49017.
-Finally, the RWPE1 dataset  \cite{rickman2012oncogene} was obtained with the accession GSE37752.
+The neural stem cell data set \cite{sofueva2013cohesin} was obtained using the accession GSE49017.
+Finally, the RWPE1 dataset  \cite{rickman2012oncogene} was obtained using the accession GSE37752.
 All libraries were processed as described in Chapter~\ref{chap:prep}.
 For some datasets, multiple technical replicates are available for each library.
 These were merged together prior to read pair counting.
 
-Scripts for alignment and processing of these libraries can be accessed with the commands below.
-These scripts assume that the relevant Sequence Read Archive files have been downloaded.
-Some software packages are also required - read \file{sra2bam.sh} for more details.
+All libraries were downloaded in the Sequence Read Archive format (SRA).
+The SRA files were aligned to the reference genome using the \file{sra2bam.sh} script at \url{https://github.com/LTLA/diffHicUsersGuide}.
+Some software packages are also required to run this script, such as various tools from the \software{Picard} suite -- read the source code in \file{sra2bam.sh} for more details.
+The resulting BAM files were then converted into index files using the \file{bam2hdf.R} script.
 
-\begin{knitrout}
-\definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
-\begin{alltt}
-\hlkwd{system.file}\hlstd{(}\hlstr{'doc'}\hlstd{,} \hlstr{'sra2bam.sh'}\hlstd{,} \hlkwc{package}\hlstd{=}\hlstr{"diffHic"}\hlstd{)}
-\hlkwd{system.file}\hlstd{(}\hlstr{'doc'}\hlstd{,} \hlstr{'bam2hdf.R'}\hlstd{,} \hlkwc{package}\hlstd{=}\hlstr{"diffHic"}\hlstd{)}
-\end{alltt}
-\end{kframe}
-\end{knitrout}
 
 \section{Session information}
 \begin{knitrout}
@@ -3137,9 +3130,9 @@ Some software packages are also required - read \file{sra2bam.sh} for more detai
 ## [10] Biostrings_2.45.4                       
 ## [11] XVector_0.17.1                          
 ## [12] edgeR_3.19.6                            
-## [13] limma_3.33.9                            
+## [13] limma_3.33.10                           
 ## [14] diffHic_1.9.6                           
-## [15] InteractionSet_1.5.6                    
+## [15] InteractionSet_1.5.7                    
 ## [16] SummarizedExperiment_1.7.9              
 ## [17] DelayedArray_0.3.20                     
 ## [18] matrixStats_0.52.2                      

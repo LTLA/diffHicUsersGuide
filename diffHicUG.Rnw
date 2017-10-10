@@ -28,7 +28,7 @@ variance modelling and hypothesis testing, and summarization and visualization o
 
 \vspace{0.05in}
 \textit{First edition:} 12 December 2012 \\
-\textit{Last revised:} 19 September 2017 \\
+\textit{Last revised:} 10 October 2017 \\
 \textit{Last compiled:} \Sexpr{format(Sys.Date(), "%d %B %Y")}
 \end{abstract}
 
@@ -645,7 +645,7 @@ new.param
 \section{Loading counts from existing count matrices}
 It is possible to use counts from existing count matrices, by using coercion methods available to \Rclass{ContactMatrix} objects from the \Biocpkg{InteractionSet} package \cite{lun2016infrastructure}.
 Assume that there are two \Rclass{ContactMatrix} objects (\Robject{cm1} and \Robject{cm2}) spanning the same region of the binned interaction space.
-The code below is used to convert these two objects into a single \Rclass{InteractionSet} object for use in the \Biocpkg{diffHic} analysis pipeline.
+The \Rfunction{mergeCMs} function converts these two objects into a single \Rclass{InteractionSet} object for use in the \Biocpkg{diffHic} analysis pipeline.
 Only bin pairs with a count sum greater than 10 are retained, analogous to the output obtained with a \Rfunction{squareCounts} call with \Rcode{filter=10}.
 
 <<echo=FALSE,results="hide">>=
@@ -667,17 +667,11 @@ cm2 <- ContactMatrix(counts, all.anchor1, all.anchor2, all.regions)
 @
 
 <<>>=
-to.keep <- as.matrix(cm1) + as.matrix(cm2) >= 10
-iset1 <- deflate(cm1, extract=to.keep)
-iset2 <- deflate(cm2, extract=to.keep)
-data.com <- cbind(iset1, iset2)
-interactions(data.com) <- as(interactions(data.com), 
-                             "ReverseStrictGInteractions")
-data.com$totals <- c(sum(as.matrix(cm1)), sum(as.matrix(cm2)))
+data.com <- mergeCMs(cm1, cm2, filter=10)
 @
 
 This procedure facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
-It is easily extended to datasets involving more than two samples, by simply considering additional objects when constructing \Robject{tokeep}, \Robject{data.com} and \Rcode{totals}.
+It is easily extended to datasets involving more than two samples by simply including additional \Rclass{ContactMatrix} objects in the \Rfunction{mergeCMs} call.
 
 \section{Summary}
 Counting into bin pairs is the most general method for quantifying interaction intensity.

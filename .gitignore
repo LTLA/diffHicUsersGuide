@@ -3,6 +3,7 @@
 *.h5
 *.tsv
 *.pdf
+diffHicUG.R
 diffHicUG.aux
 diffHicUG.out
 diffHicUG.bbl
@@ -12,10 +13,11 @@ diffHicUG.toc
 mm10-hindIII.rds
 plots-ug/
 transferUG.R
-bam2hdf.R
 hg19_index
 hicmap.py
 mm10_index
-sra2bam.sh
 success.log
 texput.log
+*.sty
+*.bst
+*.tar.gz

@@ -883,6 +883,7 @@ In this case, each bin is around 1 Mbp so the flank width has an actual size of 
 <<>>=
 flank.width <- 5
 en.data <- enrichedPairs(data, flank=flank.width)
+en.data
 @
 
 The \Rfunction{filterPeaks} function uses the neighborhood counts to compute an enrichment value for each bin pair.
@@ -982,14 +983,16 @@ Users should try out the other, more general filters before proceeding to peak c
 The \Rfunction{enrichedPairs} function requires that all bin pairs are loaded into memory, i.e., with \Rcode{filter=1} during \Rfunction{squareCounts}.
 This may not be feasible for high resolution analyses with small bin sizes, where there is a large number of bin pairs with low counts.
 In such cases, it may be more practical to use the \Rfunction{neighborCounts} function.
-This re-counts the read pairs for each bin pair, storing only a limited portion of the interaction space to compute the enrichment statistic for that bin pair.
+This re-counts the read pairs for each bin pair, storing only a limited portion of the interaction space to compute the neighbourhood counts.
 The need to load all non-empty bin pairs is avoided.
-Only bin pairs with count sums greater than or equal to \Rcode{filter} are returned, along with their enrichment values.
+Only bin pairs with count sums greater than or equal to \Rcode{filter} are returned, along with neighborhood counts that can be used in \Rfunction{filterPeaks}. 
 This reduces memory usage at the cost of some speed.
 
 <<>>=
 en.data <- neighborCounts(input, param, width=1e5, filter=20, flank=5)
 en.data
+enrichments <- filterPeaks(en.data, get.enrich=TRUE)
+summary(enrichments)
 @
 
 \section{Filtering for pre-specified regions}

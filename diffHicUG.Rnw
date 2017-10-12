@@ -301,7 +301,7 @@ breaks <- seq(min(llinsert[intra]), max(llinsert[intra]), length.out=30)
 inward <- hist(llinsert[diags$orientation==1L], plot=FALSE, breaks=breaks)
 outward <- hist(llinsert[diags$orientation==2L] ,plot=FALSE, breaks=breaks)
 samestr <- hist(llinsert[diags$orientation==0L | diags$orientation==3L], 
-   plot=FALSE, breaks=breaks)
+                plot=FALSE, breaks=breaks)
 samestr$counts <- samestr$counts/2
 
 # Setting up the axis limits.
@@ -311,14 +311,14 @@ xmin <- min(inward$mids, outward$mids, samestr$mids)
 
 # Making a plot with all orientations overlaid.
 plot(0,0,type="n", xlim=c(xmin, xmax), ylim=c(0, ymax),
-    xlab=expression(log[2]~"[insert size (bp)]"), ylab="Frequency (millions)")
+     xlab=expression(log[2]~"[insert size (bp)]"), ylab="Frequency (millions)")
 lines(inward$mids, inward$counts/1e6, col="darkgreen", lwd=2)
 abline(v=log2(min.inward), col="darkgrey")
 lines(outward$mids, outward$counts/1e6, col="red", lwd=2)
 abline(v=log2(min.outward), col="darkgrey", lty=2)
 lines(samestr$mids, samestr$counts/1e6, col="blue", lwd=2)
 legend("topright", c("inward", "outward", "same"), 
-    col=c("darkgreen", "red", "blue"), lwd=2)
+       col=c("darkgreen", "red", "blue"), lwd=2)
 @
 
 As an aside, the position of the spikes in the above plots can be used to estimate some fragment lengths.
@@ -549,7 +549,7 @@ In this case, 100 kbp bins are used.
 
 <<>>=
 probe.loc <- GRanges(c("chr1", "chr2", "chr3"),
-    IRanges(c(1e7, 2e7, 3e7), c(1e7, 2e7, 3e7)))
+                     IRanges(c(1e7, 2e7, 3e7), c(1e7, 2e7, 3e7)))
 viewpoints <- resize(probe.loc, fix="center", width=1e5)
 viewdata <- connectCounts(input, mm.param, regions=viewpoints, 
                           second.regions=1e5)
@@ -582,7 +582,7 @@ Remedial action in the presence of copy number changes is not trivial and will b
 <<mamargin, fig.small=TRUE>>=
 adjc <- cpm(asDGEList(margin.data), log=TRUE, prior.count=5)
 smoothScatter(0.5*(adjc[,1]+adjc[,3]), adjc[,1]-adjc[,3],
-    xlab="A", ylab="M", main="Flox (1) vs. Ko (1)")
+              xlab="A", ylab="M", main="Flox (1) vs. Ko (1)")
 @
 
 \section{Additional parameter options}
@@ -820,7 +820,7 @@ The average abundance (and thus, the filter threshold) decreases as the distance
 
 <<avedistplot, fig.small=TRUE>>=
 smoothScatter(trended$log.distance, trended$abundances, 
-    xlab="Log-Distance", ylab="Normalized abundance")
+              xlab="Log-Distance", ylab="Normalized abundance")
 o <- order(trended$log.distance)
 lines(trended$log.distance[o], trended$threshold[o], col="red", lwd=2)
 @
@@ -1555,7 +1555,7 @@ This ensures that the genomic coordinates and statistics are synchronised.
 
 <<>>=
 mcols(clustered.small$interactions) <- cbind(
-        mcols(clustered.small$interactions), tabcluster)
+    mcols(clustered.small$interactions), tabcluster)
 @
 
 \subsection{Clustering based on significant bin pairs}

@@ -54,11 +54,11 @@ variance modelling and hypothesis testing, and summarization and visualization o
 
 \vspace{0.05in}
 \textit{First edition:} 12 December 2012 \\
-\textit{Last revised:} 19 September 2017 \\
-\textit{Last compiled:} 25 September 2017
+\textit{Last revised:} 10 October 2017 \\
+\textit{Last compiled:} 11 October 2017
 \end{abstract}
 
-\packageVersion{diffHic 1.9.6}
+\packageVersion{diffHic 1.9.7}
 
 \tableofcontents
 \newpage
@@ -382,9 +382,10 @@ The threshold value can be chosen based on the size selection interval in librar
 \definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{diags} \hlkwb{<-} \hlkwd{getPairData}\hlstd{(}\hlstr{"SRR027957.h5"}\hlstd{, hs.param)}
-\hlkwd{hist}\hlstd{(diags}\hlopt{$}\hlstd{length[diags}\hlopt{$}\hlstd{length} \hlopt{<} \hlnum{1000}\hlstd{],} \hlkwc{ylab}\hlstd{=}\hlstr{"Frequency"}\hlstd{,} \hlkwc{xlab}\hlstd{=}\hlstr{"Spacing (bp)"}\hlstd{)}
+\hlkwd{hist}\hlstd{(diags}\hlopt{$}\hlstd{length[diags}\hlopt{$}\hlstd{length} \hlopt{<} \hlnum{1000}\hlstd{],} \hlkwc{ylab}\hlstd{=}\hlstr{"Frequency"}\hlstd{,}
+     \hlkwc{xlab}\hlstd{=}\hlstr{"Spacing (bp)"}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{""}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"grey80"}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/fraglenhist-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -1025,7 +1026,7 @@ More caution is required if sharp interactions are present, i.e., interactions b
 \section{Loading counts from existing count matrices}
 It is possible to use counts from existing count matrices, by using coercion methods available to \Rclass{ContactMatrix} objects from the \Biocpkg{InteractionSet} package \cite{lun2016infrastructure}.
 Assume that there are two \Rclass{ContactMatrix} objects (\Robject{cm1} and \Robject{cm2}) spanning the same region of the binned interaction space.
-The code below is used to convert these two objects into a single \Rclass{InteractionSet} object for use in the \Biocpkg{diffHic} analysis pipeline.
+The \Rfunction{mergeCMs} function converts these two objects into a single \Rclass{InteractionSet} object for use in the \Biocpkg{diffHic} analysis pipeline.
 Only bin pairs with a count sum greater than 10 are retained, analogous to the output obtained with a \Rfunction{squareCounts} call with \Rcode{filter=10}.
 
 
@@ -1033,19 +1034,13 @@ Only bin pairs with a count sum greater than 10 are retained, analogous to the o
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{to.keep} \hlkwb{<-} \hlkwd{as.matrix}\hlstd{(cm1)} \hlopt{+} \hlkwd{as.matrix}\hlstd{(cm2)} \hlopt{>=} \hlnum{10}
-\hlstd{iset1} \hlkwb{<-} \hlkwd{deflate}\hlstd{(cm1,} \hlkwc{extract}\hlstd{=to.keep)}
-\hlstd{iset2} \hlkwb{<-} \hlkwd{deflate}\hlstd{(cm2,} \hlkwc{extract}\hlstd{=to.keep)}
-\hlstd{data.com} \hlkwb{<-} \hlkwd{cbind}\hlstd{(iset1, iset2)}
-\hlkwd{interactions}\hlstd{(data.com)} \hlkwb{<-} \hlkwd{as}\hlstd{(}\hlkwd{interactions}\hlstd{(data.com),}
-                             \hlstr{"ReverseStrictGInteractions"}\hlstd{)}
-\hlstd{data.com}\hlopt{$}\hlstd{totals} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlkwd{sum}\hlstd{(}\hlkwd{as.matrix}\hlstd{(cm1)),} \hlkwd{sum}\hlstd{(}\hlkwd{as.matrix}\hlstd{(cm2)))}
+\hlstd{data.com} \hlkwb{<-} \hlkwd{mergeCMs}\hlstd{(cm1, cm2,} \hlkwc{filter}\hlstd{=}\hlnum{10}\hlstd{)}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
 
 This procedure facilitates input from other Hi-C data processing pipelines that return count matrices rather than BAM files.
-It is easily extended to datasets involving more than two samples, by simply considering additional objects when constructing \Robject{tokeep}, \Robject{data.com} and \Rcode{totals}.
+It is easily extended to datasets involving more than two samples by simply including additional \Rclass{ContactMatrix} objects in the \Rfunction{mergeCMs} call.
 
 \section{Summary}
 Counting into bin pairs is the most general method for quantifying interaction intensity.
@@ -1084,9 +1079,9 @@ The log-mean-per-million is known as the average abundance and can be computed w
 \begin{alltt}
 \hlkwd{library}\hlstd{(edgeR)}
 \hlstd{ave.ab} \hlkwb{<-} \hlkwd{aveLogCPM}\hlstd{(}\hlkwd{asDGEList}\hlstd{(data))}
-\hlkwd{hist}\hlstd{(ave.ab,} \hlkwc{xlab}\hlstd{=}\hlstr{"Average abundance"}\hlstd{)}
+\hlkwd{hist}\hlstd{(ave.ab,} \hlkwc{xlab}\hlstd{=}\hlstr{"Average abundance"}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"grey80"}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{""}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/avehistplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -1255,7 +1250,7 @@ The average abundance (and thus, the filter threshold) decreases as the distance
 \hlstd{o} \hlkwb{<-} \hlkwd{order}\hlstd{(trended}\hlopt{$}\hlstd{log.distance)}
 \hlkwd{lines}\hlstd{(trended}\hlopt{$}\hlstd{log.distance[o], trended}\hlopt{$}\hlstd{threshold[o],} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/avedistplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -2935,7 +2930,7 @@ The mean-dependent trend in the NB dispersions is modelled using \Rfunction{esti
 \hlstd{ydom} \hlkwb{<-} \hlkwd{estimateDisp}\hlstd{(ydom, design)}
 \hlkwd{plotBCV}\hlstd{(ydom)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/bcvdomplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -2947,7 +2942,7 @@ A GLM is fitted to the counts for each bin using the specified model and the tre
 \hlstd{fitdom} \hlkwb{<-} \hlkwd{glmQLFit}\hlstd{(ydom, design,} \hlkwc{robust}\hlstd{=}\hlnum{TRUE}\hlstd{)}
 \hlkwd{plotQLDisp}\hlstd{(fitdom)}
 \end{alltt}
-\end{kframe}\begin{adjustwidth}{\fltoffset}{0mm}
+\end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/qldomplot-1} \end{adjustwidth}
 \end{knitrout}
 
@@ -3118,8 +3113,8 @@ The resulting BAM files were then converted into index files using the \file{bam
 ## [8] methods   base     
 ## 
 ## other attached packages:
-##  [1] csaw_1.11.2                             
-##  [2] BiocParallel_1.11.8                     
+##  [1] csaw_1.11.3                             
+##  [2] BiocParallel_1.11.9                     
 ##  [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.0
 ##  [4] GenomicFeatures_1.29.11                 
 ##  [5] AnnotationDbi_1.39.3                    
@@ -3129,24 +3124,24 @@ The resulting BAM files were then converted into index files using the \file{bam
 ##  [9] rtracklayer_1.37.3                      
 ## [10] Biostrings_2.45.4                       
 ## [11] XVector_0.17.1                          
-## [12] edgeR_3.19.6                            
-## [13] limma_3.33.10                           
-## [14] diffHic_1.9.6                           
+## [12] edgeR_3.19.7                            
+## [13] limma_3.33.13                           
+## [14] diffHic_1.9.7                           
 ## [15] InteractionSet_1.5.7                    
-## [16] SummarizedExperiment_1.7.9              
-## [17] DelayedArray_0.3.20                     
+## [16] SummarizedExperiment_1.7.10             
+## [17] DelayedArray_0.3.21                     
 ## [18] matrixStats_0.52.2                      
 ## [19] Biobase_2.37.2                          
-## [20] GenomicRanges_1.29.14                   
-## [21] GenomeInfoDb_1.13.4                     
-## [22] IRanges_2.11.17                         
-## [23] S4Vectors_0.15.8                        
-## [24] BiocGenerics_0.23.1                     
+## [20] GenomicRanges_1.29.15                   
+## [21] GenomeInfoDb_1.13.5                     
+## [22] IRanges_2.11.19                         
+## [23] S4Vectors_0.15.12                       
+## [24] BiocGenerics_0.23.3                     
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] progress_1.1.2           statmod_1.4.30          
 ##  [3] locfit_1.5-9.1           splines_3.4.0           
-##  [5] lattice_0.20-35          rhdf5_2.21.4            
+##  [5] lattice_0.20-35          rhdf5_2.21.6            
 ##  [7] htmltools_0.3.6          yaml_2.1.14             
 ##  [9] blob_1.1.0               XML_3.98-1.9            
 ## [11] rlang_0.1.2              DBI_0.7                 
@@ -3154,10 +3149,10 @@ The resulting BAM files were then converted into index files using the \file{bam
 ## [15] stringr_1.2.0            zlibbioc_1.23.0         
 ## [17] evaluate_0.10.1          memoise_1.1.0           
 ## [19] knitr_1.17               biomaRt_2.33.4          
-## [21] highr_0.6                Rcpp_0.12.12            
-## [23] KernSmooth_2.23-15       backports_1.1.0         
+## [21] highr_0.6                Rcpp_0.12.13            
+## [23] KernSmooth_2.23-15       backports_1.1.1         
 ## [25] bit_1.1-12               Rsamtools_1.29.1        
-## [27] BiocStyle_2.5.38         digest_0.6.12           
+## [27] BiocStyle_2.5.39         digest_0.6.12           
 ## [29] stringi_1.1.5            Rhtslib_1.9.2           
 ## [31] grid_3.4.0               rprojroot_1.2           
 ## [33] tools_3.4.0              bitops_1.0-6            

@@ -9,5 +9,3 @@ diffHicUG.pdf: diffHicUG.tex
 	pdflatex $<
 	pdflatex $<
 
-output.pdf: diffHicUG.pdf
-	Rscript transferUG.R $< $@

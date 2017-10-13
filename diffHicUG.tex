@@ -55,10 +55,10 @@ variance modelling and hypothesis testing, and summarization and visualization o
 \vspace{0.05in}
 \textit{First edition:} 12 December 2012 \\
 \textit{Last revised:} 10 October 2017 \\
-\textit{Last compiled:} 11 October 2017
+\textit{Last compiled:} 12 October 2017
 \end{abstract}
 
-\packageVersion{diffHic 1.9.7}
+\packageVersion{diffHic 1.9.8}
 
 \tableofcontents
 \newpage
@@ -435,7 +435,7 @@ Thresholds should be chosen in \Rfunction{prunePairs} to remove these spikes, as
 \hlstd{inward} \hlkwb{<-} \hlkwd{hist}\hlstd{(llinsert[diags}\hlopt{$}\hlstd{orientation}\hlopt{==}\hlnum{1L}\hlstd{],} \hlkwc{plot}\hlstd{=}\hlnum{FALSE}\hlstd{,} \hlkwc{breaks}\hlstd{=breaks)}
 \hlstd{outward} \hlkwb{<-} \hlkwd{hist}\hlstd{(llinsert[diags}\hlopt{$}\hlstd{orientation}\hlopt{==}\hlnum{2L}\hlstd{] ,}\hlkwc{plot}\hlstd{=}\hlnum{FALSE}\hlstd{,} \hlkwc{breaks}\hlstd{=breaks)}
 \hlstd{samestr} \hlkwb{<-} \hlkwd{hist}\hlstd{(llinsert[diags}\hlopt{$}\hlstd{orientation}\hlopt{==}\hlnum{0L} \hlopt{|} \hlstd{diags}\hlopt{$}\hlstd{orientation}\hlopt{==}\hlnum{3L}\hlstd{],}
-   \hlkwc{plot}\hlstd{=}\hlnum{FALSE}\hlstd{,} \hlkwc{breaks}\hlstd{=breaks)}
+                \hlkwc{plot}\hlstd{=}\hlnum{FALSE}\hlstd{,} \hlkwc{breaks}\hlstd{=breaks)}
 \hlstd{samestr}\hlopt{$}\hlstd{counts} \hlkwb{<-} \hlstd{samestr}\hlopt{$}\hlstd{counts}\hlopt{/}\hlnum{2}
 
 \hlcom{# Setting up the axis limits.}
@@ -445,14 +445,14 @@ Thresholds should be chosen in \Rfunction{prunePairs} to remove these spikes, as
 
 \hlcom{# Making a plot with all orientations overlaid.}
 \hlkwd{plot}\hlstd{(}\hlnum{0}\hlstd{,}\hlnum{0}\hlstd{,}\hlkwc{type}\hlstd{=}\hlstr{"n"}\hlstd{,} \hlkwc{xlim}\hlstd{=}\hlkwd{c}\hlstd{(xmin, xmax),} \hlkwc{ylim}\hlstd{=}\hlkwd{c}\hlstd{(}\hlnum{0}\hlstd{, ymax),}
-    \hlkwc{xlab}\hlstd{=}\hlkwd{expression}\hlstd{(log[}\hlnum{2}\hlstd{]}\hlopt{~}\hlstr{"[insert size (bp)]"}\hlstd{),} \hlkwc{ylab}\hlstd{=}\hlstr{"Frequency (millions)"}\hlstd{)}
+     \hlkwc{xlab}\hlstd{=}\hlkwd{expression}\hlstd{(log[}\hlnum{2}\hlstd{]}\hlopt{~}\hlstr{"[insert size (bp)]"}\hlstd{),} \hlkwc{ylab}\hlstd{=}\hlstr{"Frequency (millions)"}\hlstd{)}
 \hlkwd{lines}\hlstd{(inward}\hlopt{$}\hlstd{mids, inward}\hlopt{$}\hlstd{counts}\hlopt{/}\hlnum{1e6}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"darkgreen"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \hlkwd{abline}\hlstd{(}\hlkwc{v}\hlstd{=}\hlkwd{log2}\hlstd{(min.inward),} \hlkwc{col}\hlstd{=}\hlstr{"darkgrey"}\hlstd{)}
 \hlkwd{lines}\hlstd{(outward}\hlopt{$}\hlstd{mids, outward}\hlopt{$}\hlstd{counts}\hlopt{/}\hlnum{1e6}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \hlkwd{abline}\hlstd{(}\hlkwc{v}\hlstd{=}\hlkwd{log2}\hlstd{(min.outward),} \hlkwc{col}\hlstd{=}\hlstr{"darkgrey"}\hlstd{,} \hlkwc{lty}\hlstd{=}\hlnum{2}\hlstd{)}
 \hlkwd{lines}\hlstd{(samestr}\hlopt{$}\hlstd{mids, samestr}\hlopt{$}\hlstd{counts}\hlopt{/}\hlnum{1e6}\hlstd{,} \hlkwc{col}\hlstd{=}\hlstr{"blue"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \hlkwd{legend}\hlstd{(}\hlstr{"topright"}\hlstd{,} \hlkwd{c}\hlstd{(}\hlstr{"inward"}\hlstd{,} \hlstr{"outward"}\hlstd{,} \hlstr{"same"}\hlstd{),}
-    \hlkwc{col}\hlstd{=}\hlkwd{c}\hlstd{(}\hlstr{"darkgreen"}\hlstd{,} \hlstr{"red"}\hlstd{,} \hlstr{"blue"}\hlstd{),} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
+       \hlkwc{col}\hlstd{=}\hlkwd{c}\hlstd{(}\hlstr{"darkgreen"}\hlstd{,} \hlstr{"red"}\hlstd{,} \hlstr{"blue"}\hlstd{),} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
 \end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/strorient-1} \end{adjustwidth}
@@ -840,7 +840,7 @@ In this case, 100 kbp bins are used.
 \definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlstd{probe.loc} \hlkwb{<-} \hlkwd{GRanges}\hlstd{(}\hlkwd{c}\hlstd{(}\hlstr{"chr1"}\hlstd{,} \hlstr{"chr2"}\hlstd{,} \hlstr{"chr3"}\hlstd{),}
-    \hlkwd{IRanges}\hlstd{(}\hlkwd{c}\hlstd{(}\hlnum{1e7}\hlstd{,} \hlnum{2e7}\hlstd{,} \hlnum{3e7}\hlstd{),} \hlkwd{c}\hlstd{(}\hlnum{1e7}\hlstd{,} \hlnum{2e7}\hlstd{,} \hlnum{3e7}\hlstd{)))}
+                     \hlkwd{IRanges}\hlstd{(}\hlkwd{c}\hlstd{(}\hlnum{1e7}\hlstd{,} \hlnum{2e7}\hlstd{,} \hlnum{3e7}\hlstd{),} \hlkwd{c}\hlstd{(}\hlnum{1e7}\hlstd{,} \hlnum{2e7}\hlstd{,} \hlnum{3e7}\hlstd{)))}
 \hlstd{viewpoints} \hlkwb{<-} \hlkwd{resize}\hlstd{(probe.loc,} \hlkwc{fix}\hlstd{=}\hlstr{"center"}\hlstd{,} \hlkwc{width}\hlstd{=}\hlnum{1e5}\hlstd{)}
 \hlstd{viewdata} \hlkwb{<-} \hlkwd{connectCounts}\hlstd{(input, mm.param,} \hlkwc{regions}\hlstd{=viewpoints,}
                           \hlkwc{second.regions}\hlstd{=}\hlnum{1e5}\hlstd{)}
@@ -866,12 +866,12 @@ In this case, 100 kbp bins are used.
 ## GRanges object with 6 ranges and 3 metadata columns:
 ##       seqnames             ranges strand |    nfrags is.second  original
 ##          <Rle>          <IRanges>  <Rle> | <integer> <logical> <integer>
-##   [1]     chr1 [      1, 3004109]      * |         1         1         1
-##   [2]     chr1 [3004106, 3100835]      * |        34         1         2
-##   [3]     chr1 [3100832, 3194461]      * |        30         1         3
-##   [4]     chr1 [3194458, 3301641]      * |        41         1         4
-##   [5]     chr1 [3301638, 3399158]      * |        52         1         5
-##   [6]     chr1 [3399155, 3501374]      * |        39         1         6
+##   [1]     chr1 [      1, 3004109]      * |         1         1      <NA>
+##   [2]     chr1 [3004106, 3100835]      * |        34         1      <NA>
+##   [3]     chr1 [3100832, 3194461]      * |        30         1      <NA>
+##   [4]     chr1 [3194458, 3301641]      * |        41         1      <NA>
+##   [5]     chr1 [3301638, 3399158]      * |        52         1      <NA>
+##   [6]     chr1 [3399155, 3501374]      * |        39         1      <NA>
 ##   -------
 ##   seqinfo: 66 sequences from an unspecified genome
 \end{verbatim}
@@ -919,7 +919,7 @@ Remedial action in the presence of copy number changes is not trivial and will b
 \begin{alltt}
 \hlstd{adjc} \hlkwb{<-} \hlkwd{cpm}\hlstd{(}\hlkwd{asDGEList}\hlstd{(margin.data),} \hlkwc{log}\hlstd{=}\hlnum{TRUE}\hlstd{,} \hlkwc{prior.count}\hlstd{=}\hlnum{5}\hlstd{)}
 \hlkwd{smoothScatter}\hlstd{(}\hlnum{0.5}\hlopt{*}\hlstd{(adjc[,}\hlnum{1}\hlstd{]}\hlopt{+}\hlstd{adjc[,}\hlnum{3}\hlstd{]), adjc[,}\hlnum{1}\hlstd{]}\hlopt{-}\hlstd{adjc[,}\hlnum{3}\hlstd{],}
-    \hlkwc{xlab}\hlstd{=}\hlstr{"A"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"M"}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{"Flox (1) vs. Ko (1)"}\hlstd{)}
+              \hlkwc{xlab}\hlstd{=}\hlstr{"A"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"M"}\hlstd{,} \hlkwc{main}\hlstd{=}\hlstr{"Flox (1) vs. Ko (1)"}\hlstd{)}
 \end{alltt}
 \end{kframe}\begin{adjustwidth}{2\fltoffset}{2\fltoffset}
 \includegraphics[width=\maxwidth]{plots-ug/mamargin-1} \end{adjustwidth}
@@ -1246,7 +1246,7 @@ The average abundance (and thus, the filter threshold) decreases as the distance
 \definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{smoothScatter}\hlstd{(trended}\hlopt{$}\hlstd{log.distance, trended}\hlopt{$}\hlstd{abundances,}
-    \hlkwc{xlab}\hlstd{=}\hlstr{"Log-Distance"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"Normalized abundance"}\hlstd{)}
+              \hlkwc{xlab}\hlstd{=}\hlstr{"Log-Distance"}\hlstd{,} \hlkwc{ylab}\hlstd{=}\hlstr{"Normalized abundance"}\hlstd{)}
 \hlstd{o} \hlkwb{<-} \hlkwd{order}\hlstd{(trended}\hlopt{$}\hlstd{log.distance)}
 \hlkwd{lines}\hlstd{(trended}\hlopt{$}\hlstd{log.distance[o], trended}\hlopt{$}\hlstd{threshold[o],} \hlkwc{col}\hlstd{=}\hlstr{"red"}\hlstd{,} \hlkwc{lwd}\hlstd{=}\hlnum{2}\hlstd{)}
 \end{alltt}
@@ -1342,7 +1342,20 @@ In this case, each bin is around 1 Mbp so the flank width has an actual size of 
 \begin{alltt}
 \hlstd{flank.width} \hlkwb{<-} \hlnum{5}
 \hlstd{en.data} \hlkwb{<-} \hlkwd{enrichedPairs}\hlstd{(data,} \hlkwc{flank}\hlstd{=flank.width)}
+\hlstd{en.data}
 \end{alltt}
+\begin{verbatim}
+## class: InteractionSet 
+## dim: 3319100 4 
+## metadata(2): param width
+## assays(5): counts quadrant vertical horizontal surrounding
+## rownames: NULL
+## rowData names(4): N.quadrant N.vertical N.horizontal N.surrounding
+## colnames: NULL
+## colData names(1): totals
+## type: ReverseStrictGInteractions
+## regions: 2739
+\end{verbatim}
 \end{kframe}
 \end{knitrout}
 
@@ -1452,9 +1465,9 @@ Users should try out the other, more general filters before proceeding to peak c
 The \Rfunction{enrichedPairs} function requires that all bin pairs are loaded into memory, i.e., with \Rcode{filter=1} during \Rfunction{squareCounts}.
 This may not be feasible for high resolution analyses with small bin sizes, where there is a large number of bin pairs with low counts.
 In such cases, it may be more practical to use the \Rfunction{neighborCounts} function.
-This re-counts the read pairs for each bin pair, storing only a limited portion of the interaction space to compute the enrichment statistic for that bin pair.
+This re-counts the read pairs for each bin pair, storing only a limited portion of the interaction space to compute the neighbourhood counts.
 The need to load all non-empty bin pairs is avoided.
-Only bin pairs with count sums greater than or equal to \Rcode{filter} are returned, along with their enrichment values.
+Only bin pairs with count sums greater than or equal to \Rcode{filter} are returned, along with neighborhood counts that can be used in \Rfunction{filterPeaks}. 
 This reduces memory usage at the cost of some speed.
 
 \begin{knitrout}
@@ -1474,6 +1487,14 @@ This reduces memory usage at the cost of some speed.
 ## colData names(1): totals
 ## type: ReverseStrictGInteractions
 ## regions: 26729
+\end{verbatim}
+\begin{alltt}
+\hlstd{enrichments} \hlkwb{<-} \hlkwd{filterPeaks}\hlstd{(en.data,} \hlkwc{get.enrich}\hlstd{=}\hlnum{TRUE}\hlstd{)}
+\hlkwd{summary}\hlstd{(enrichments)}
+\end{alltt}
+\begin{verbatim}
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+## -5.98142 -1.20472 -0.36342      Inf  0.08444      Inf
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -2291,7 +2312,7 @@ This ensures that the genomic coordinates and statistics are synchronised.
 \definecolor{shadecolor}{rgb}{0.941, 0.941, 0.941}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{mcols}\hlstd{(clustered.small}\hlopt{$}\hlstd{interactions)} \hlkwb{<-} \hlkwd{cbind}\hlstd{(}
-        \hlkwd{mcols}\hlstd{(clustered.small}\hlopt{$}\hlstd{interactions), tabcluster)}
+    \hlkwd{mcols}\hlstd{(clustered.small}\hlopt{$}\hlstd{interactions), tabcluster)}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
@@ -3126,7 +3147,7 @@ The resulting BAM files were then converted into index files using the \file{bam
 ## [11] XVector_0.17.1                          
 ## [12] edgeR_3.19.7                            
 ## [13] limma_3.33.13                           
-## [14] diffHic_1.9.7                           
+## [14] diffHic_1.9.8                           
 ## [15] InteractionSet_1.5.7                    
 ## [16] SummarizedExperiment_1.7.10             
 ## [17] DelayedArray_0.3.21                     
@@ -3152,7 +3173,7 @@ The resulting BAM files were then converted into index files using the \file{bam
 ## [21] highr_0.6                Rcpp_0.12.13            
 ## [23] KernSmooth_2.23-15       backports_1.1.1         
 ## [25] bit_1.1-12               Rsamtools_1.29.1        
-## [27] BiocStyle_2.5.39         digest_0.6.12           
+## [27] BiocStyle_2.5.40         digest_0.6.12           
 ## [29] stringi_1.1.5            Rhtslib_1.9.2           
 ## [31] grid_3.4.0               rprojroot_1.2           
 ## [33] tools_3.4.0              bitops_1.0-6            

@@ -179,6 +179,12 @@ In such cases, it's not clear how to normalize as you can't assume non-DE.
 (In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
 This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
 
+One oft-proposed strategy is to apply TMM normalization on large bin pairs and try to normalize based on those counts.
+However, there is no real ``composition bias" equivalent to that found in ChIP-seq data.
+If you have more interactions between two loci, there will necessarily be fewer interactions involving those loci and other regions.
+It's not a consequence of competition for sequencing resources -- rather, it is due to the fact that you only have a fixed number of molecules that can contact each other.
+This effect represents genuine DI and should arguably not be normalized out, especially if the changes in intensity are serious enough to affect large bin pairs.
+
 \subsection{Thoughts on genomic biases}
 
 \subsubsection{Why we don't bother}

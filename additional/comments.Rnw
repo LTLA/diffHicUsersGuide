@@ -168,22 +168,31 @@ In general, adjustment is not required to obtain sensible peak calls.
 
 \subsection{When to use scaling normalization}
 
-Library size normalization may be the least-worst approach when an assumption of a non-DI majority does not apply.
-For most applications, this is reasonable at first glance; there should be no changes in genome composition between conditions, only in the pairing between genomic regions.
-Thus, the library size should be the same between conditions, and any differences should be technical in origin.
-You'll probably have lots of biases due to ligation and cross-linking efficiency differences, which are confounded with DIs and can't be properly removed.
-However, at least it's better than normalizing in the wrong direction when you (incorrectly) assume that a non-DI majority is present.
-
-Some situations include mitosis vs non-mitotic or cycling cells, where you might get very large changes in interaction structure.
-In such cases, it's not clear how to normalize as you can't assume non-DE.
-(In fact, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.)
-This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
-
-One oft-proposed strategy is to apply TMM normalization on large bin pairs and try to normalize based on those counts.
-However, there is no real ``composition bias" equivalent to that found in ChIP-seq data.
+Scaling normalization is best suited for situations where the assumption of a non-DI majority does not apply.
+However, there is an interesting question of whether composition biases are actually present in these data.
 If you have more interactions between two loci, there will necessarily be fewer interactions involving those loci and other regions.
 It's not a consequence of competition for sequencing resources -- rather, it is due to the fact that you only have a fixed number of molecules that can contact each other.
-This effect represents genuine DI and should arguably not be normalized out, especially if the changes in intensity are serious enough to affect large bin pairs.
+This suggests that the ``bias'' may actually be biologically relevant if loci are being diverted elsewhere for interaction.
+
+So, whether or not we should normalize out this bias requires some consideration of the underlying experimental context. 
+Consider a 4C-like situation involving a negative control with (theoretically) no interactions.
+You may be able to assume that the bait region does not bind most other regions in the genome, allowing us to apply TMM on the set of interactions involving the bait region.
+The idea is to remove uninteresting composition biases in interactions that are only driven by non-specific ligation of the available bait.
+It also adjusts for systematic differences in ligation efficiency between the live sample and the negative control.
+
+On the other hand, we might be comparing mitotic versus non-mitotic cells, where there is a loss of almost all long-range interactions in the former.
+It is possible that the loss of long-range interactions results in an increase in local interactions.
+If so, the entire interaction space becomes DI, and the best approach would be to normalize using the number of dangling ends as the library size.
+This corrects for composition biases in the number of within-fragment artifacts, which should be the same between samples but will drop if those loci are interacting instead.
+
+Another approach would be to apply TMM on large inter-chromosomal bin pairs, assuming they only contain non-specific ligation events.
+This is, perhaps, a stronger assumption to make when the conditions are so different that the entire intra-chromosomal interaction space is changing.
+More generally, though, it's arguable that there's no point doing a DI analysis at all, given that changes will occur everywhere.
+This also suggests that we should phase-synchronise our cells before doing Hi-C and comparing between conditions.
+
+In any case, you'll probably have lots of biases due to ligation and cross-linking efficiency differences.
+These are confounded with DIs and can't be properly removed when you can't assume a non-DI majority.
+However, at least scaling normalization does correct for composition biases, and it's better than normalizing in the wrong direction.
 
 \subsection{Thoughts on genomic biases}
 
